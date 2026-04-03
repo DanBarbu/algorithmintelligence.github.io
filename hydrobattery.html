@@ -79,7 +79,7 @@
     <div class="h-logo">&#128167;</div>
     <div>
       <div class="h-title">Malaysia Hydrobattery Atlas</div>
-      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Off-river greenfield sites</div>
+      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Kenyir Bluefield sites</div>
     </div>
   </div>
   <div class="h-ctrl">
@@ -106,102 +106,189 @@
 </div>
 <div id="foot">
   <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
-  <div><span id="cnt">8</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
+  <div><span id="cnt">12</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const SITES=[
+/* ── Kenyir Lake polygon (145 m water level, Terengganu) ────────────────
+   Simplified boundary matching known reservoir outline ~260 km²           */
+var KENYIR=[
+  [4.740,102.728],[4.762,102.754],[4.778,102.773],[4.800,102.791],
+  [4.825,102.813],[4.858,102.831],[4.893,102.846],[4.938,102.865],
+  [4.978,102.882],[5.018,102.882],[5.062,102.888],[5.102,102.878],
+  [5.138,102.865],[5.170,102.845],[5.185,102.799],[5.158,102.750],
+  [5.121,102.714],[5.082,102.675],[5.035,102.651],[4.988,102.641],
+  [4.945,102.628],[4.898,102.611],[4.865,102.628],[4.838,102.651],
+  [4.798,102.668],[4.765,102.690],[4.745,102.715],[4.740,102.728]
+];
+
+/* ── Sites ──────────────────────────────────────────────────────────────
+   area = base surface area at default cap (km²)
+   bear = valley axis bearing °N (for valley-shaped polygons)
+   l.fixed = true  →  lower reservoir is KENYIR (existing lake, no dam)
+   Kenyir Bluefield: head 90-130 m (existing lake as lower reservoir).
+   KY001 is ANU-confirmed: n05_e102_RES68377+RES_2011, Class AA,
+   head 107 m, vol 692.7 GL / 150 GWh at 50 h, W/R pair 182.7.          */
+var SITES=[
+  /* — Peninsular greenfield off-river sites — */
   {id:"MY001",name:"Cameron Ridge",cls:"AAA",
-   u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,dlen:680},
-   l:{n:"Telom Valley",lat:4.462,lng:101.435,elev:680,area:1.20,dlen:820},
+   u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,bear:340,dlen:680},
+   l:{n:"Telom Valley",lat:4.462,lng:101.435,elev:680,area:1.20,bear:160,dlen:820},
    head:740,dist:5.8,slope:0.128,cap:18.9},
   {id:"MY002",name:"Titiwangsa Peak",cls:"AA",
-   u:{n:"Ulu Slim Upper",lat:3.751,lng:101.381,elev:1580,area:0.72,dlen:620},
-   l:{n:"Slim Valley",lat:3.712,lng:101.415,elev:820,area:1.05,dlen:780},
+   u:{n:"Ulu Slim Upper",lat:3.751,lng:101.381,elev:1580,area:0.72,bear:350,dlen:620},
+   l:{n:"Slim Valley",lat:3.712,lng:101.415,elev:820,area:1.05,bear:170,dlen:780},
    head:760,dist:6.2,slope:0.123,cap:16.0},
   {id:"MY003",name:"Fraser Highland",cls:"A",
-   u:{n:"Ulu Semantan Upper",lat:3.721,lng:101.752,elev:1200,area:0.95,dlen:730},
-   l:{n:"Semantan Reservoir",lat:3.681,lng:101.783,elev:450,area:1.35,dlen:880},
+   u:{n:"Ulu Semantan Upper",lat:3.721,lng:101.752,elev:1200,area:0.95,bear:20,dlen:730},
+   l:{n:"Semantan Reservoir",lat:3.681,lng:101.783,elev:450,area:1.35,bear:200,dlen:880},
    head:750,dist:5.4,slope:0.139,cap:21.5},
   {id:"MY004",name:"Genting Sempah",cls:"A",
-   u:{n:"Genting Upper",lat:3.441,lng:101.801,elev:1300,area:0.68,dlen:590},
-   l:{n:"Klang Gates",lat:3.401,lng:101.832,elev:540,area:0.98,dlen:750},
+   u:{n:"Genting Upper",lat:3.441,lng:101.801,elev:1300,area:0.68,bear:315,dlen:590},
+   l:{n:"Klang Gates",lat:3.401,lng:101.832,elev:540,area:0.98,bear:135,dlen:750},
    head:760,dist:5.9,slope:0.129,cap:12.5},
   {id:"MY005",name:"Crocker Range",cls:"AAA",
-   u:{n:"Sg. Pegalan Upper",lat:5.851,lng:116.301,elev:1480,area:1.05,dlen:790},
-   l:{n:"Pegalan Valley",lat:5.801,lng:116.341,elev:680,area:1.42,dlen:930},
+   u:{n:"Sg. Pegalan Upper",lat:5.851,lng:116.301,elev:1480,area:1.05,bear:10,dlen:790},
+   l:{n:"Pegalan Valley",lat:5.801,lng:116.341,elev:680,area:1.42,bear:190,dlen:930},
    head:800,dist:6.8,slope:0.118,cap:25.8},
   {id:"MY006",name:"Kelabit Highlands",cls:"AA",
-   u:{n:"Bario Upper",lat:3.741,lng:115.501,elev:1150,area:0.88,dlen:700},
-   l:{n:"Pa Lungan",lat:3.701,lng:115.535,elev:380,area:1.18,dlen:840},
+   u:{n:"Bario Upper",lat:3.741,lng:115.501,elev:1150,area:0.88,bear:30,dlen:700},
+   l:{n:"Pa Lungan",lat:3.701,lng:115.535,elev:380,area:1.18,bear:210,dlen:840},
    head:770,dist:5.6,slope:0.138,cap:20.8},
   {id:"MY007",name:"Ulu Endau",cls:"A",
-   u:{n:"Sg. Endau Upper",lat:2.651,lng:103.481,elev:980,area:0.78,dlen:650},
-   l:{n:"Endau Reservoir",lat:2.611,lng:103.511,elev:230,area:1.08,dlen:780},
+   u:{n:"Sg. Endau Upper",lat:2.651,lng:103.481,elev:980,area:0.78,bear:355,dlen:650},
+   l:{n:"Endau Reservoir",lat:2.611,lng:103.511,elev:230,area:1.08,bear:175,dlen:780},
    head:750,dist:5.2,slope:0.144,cap:14.5},
   {id:"MY008",name:"Sabah Highland",cls:"AA",
-   u:{n:"Sg. Moyog Upper",lat:5.401,lng:116.851,elev:1350,area:0.92,dlen:720},
-   l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,dlen:860},
-   head:770,dist:5.5,slope:0.140,cap:22.0}
+   u:{n:"Sg. Moyog Upper",lat:5.401,lng:116.851,elev:1350,area:0.92,bear:5,dlen:720},
+   l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,bear:185,dlen:860},
+   head:770,dist:5.5,slope:0.140,cap:22.0},
+
+  /* — Kenyir Lake Bluefield (lower = Kenyir Lake 145 m, existing) — */
+  /* KY001: ANU confirmed n05_e102_RES68377+RES_2011. 6 h base shown.
+     Full design: 692.7 GL / 150 GWh / 3 GW at 50 h, W/R 182.7 pair.  */
+  {id:"KY001",name:"Kenyir West (ANU confirmed)",cls:"AA",
+   u:{n:"RES68377 Upper",lat:5.111,lng:102.610,elev:252,area:4.2,bear:285,dlen:1180},
+   l:{n:"Kenyir Lake",lat:5.110,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   head:107,dist:1.0,slope:0.107,cap:18.2,anuWR:182.7,anuGWh:150,anuH:50},
+  /* KY002-KY004: estimated per ANU Bluefield methodology, Kenyir vicinity */
+  {id:"KY002",name:"Kenyir North-West",cls:"AAA",
+   u:{n:"Gunung Stong Foothills Upper",lat:5.188,lng:102.650,elev:270,area:3.6,bear:310,dlen:1050},
+   l:{n:"Kenyir Lake",lat:5.155,lng:102.685,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   head:125,dist:2.5,slope:0.050,cap:21.5},
+  {id:"KY003",name:"Kenyir South-West",cls:"AA",
+   u:{n:"Tembat Highland Upper",lat:4.935,lng:102.562,elev:248,area:3.2,bear:250,dlen:980},
+   l:{n:"Kenyir Lake",lat:4.948,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   head:103,dist:1.8,slope:0.057,cap:15.8},
+  {id:"KY004",name:"Kenyir South",cls:"A",
+   u:{n:"Menerong Upper",lat:4.825,lng:102.842,elev:235,area:2.8,bear:130,dlen:890},
+   l:{n:"Kenyir Lake",lat:4.862,lng:102.822,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   head:90,dist:3.2,slope:0.028,cap:10.5}
 ];
 
 /* ── Calculation helpers ──────────────────────────────────────────────── */
 function vol(cap,head){return cap/(head*0.002044);}
 function dh(vGL,aKm2){return 2.8*vGL/aKm2;}
 function rv(h,len){return 2*h*h*len/1e6;}
+/* area scales as sqrt(cap) because V∝cap and h∝sqrt(V) and A∝h */
+function scaledArea(baseA,baseCap,cap){return baseA*Math.sqrt(cap/baseCap);}
 function metrics(s,cap){
   var v=vol(cap,s.head);
-  var uh=dh(v,s.u.area),lh=dh(v,s.l.area);
-  var ur=rv(uh,s.u.dlen),lr=rv(lh,s.l.dlen);
-  return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:v/ur,lwr:v/lr,
+  var aU=scaledArea(s.u.area,s.cap,cap);
+  var uh=dh(v,aU),ur=rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
+  var lh=0,lr=0,lwr=0;
+  if(!s.l.fixed){var aL=scaledArea(s.l.area,s.cap,cap);lh=dh(v,aL);lr=rv(lh,s.l.dlen);lwr=lr>0?v/lr:999;}
+  return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:uwr,lwr:lwr,
          pw:cap*1000/6,pop:Math.round(cap*850000)};
 }
 
-/* ── Lake polygon generator ───────────────────────────────────────────── */
+/* ── Polygon generators ───────────────────────────────────────────────── */
 var IRR=[1.00,0.85,1.10,0.78,0.95,1.15,0.88,1.05,0.92,0.80,1.08,0.97];
-function poly(lat,lng,area,seed){
+/* Irregular circle (greenfield both-new reservoirs) */
+function roundPoly(lat,lng,area,seed){
   var r=Math.sqrt(area/Math.PI)/111,pts=[],n=12;
   for(var i=0;i<n;i++){
     var a=(i/n)*2*Math.PI-Math.PI/2;
-    var ri=r*IRR[(i+seed)%n];
+    var ri=r*IRR[(i+seed)%12];
     pts.push([lat+ri*Math.cos(a)*0.92,lng+ri*Math.sin(a)]);
   }
   pts.push(pts[0]);return pts;
+}
+/* Elongated valley shape (artificial dam reservoir) — bear=valley axis °N */
+var IRRV=[1.00,0.93,1.07,0.88,1.05,0.92,1.10,0.85,1.08,0.90,1.04,0.87,1.06,0.94,1.09,0.89];
+function valleyPoly(lat,lng,area,bear,seed){
+  var ar=2.6+(seed%4)*0.2; /* aspect ratio 2.6–3.2 */
+  var aLen=Math.sqrt(area*ar)/111,bLen=Math.sqrt(area/ar)/111;
+  var b=bear*Math.PI/180,cosB=Math.cos(b),sinB=Math.sin(b);
+  var pts=[],n=16;
+  for(var i=0;i<n;i++){
+    var t=(i/n)*2*Math.PI;
+    var ri=IRRV[(i+seed)%16];
+    var taper=0.72+0.28*(1+Math.cos(t))/2; /* wider at dam end */
+    var rx=aLen*Math.cos(t)*ri;
+    var ry=bLen*Math.sin(t)*taper*ri;
+    pts.push([lat+rx*cosB-ry*sinB, lng+(rx*sinB+ry*cosB)*1.12]);
+  }
+  pts.push(pts[0]);return pts;
+}
+/* Select polygon for reservoir r at current cap */
+function resPoly(r,s,cap,isUpper){
+  if(r.fixed)return KENYIR;
+  var seed=SITES.indexOf(s)+(isUpper?0:5);
+  var a=scaledArea(r.area,s.cap,cap);
+  if(r.bear!==undefined&&(r.fixed===undefined))return valleyPoly(r.lat,r.lng,a,r.bear,seed);
+  return roundPoly(r.lat,r.lng,a,seed);
 }
 
 function clsCol(c){return{AAA:"#f4a800",AA:"#e74c3c",A:"#27ae60"}[c]||"#2a6496";}
 
 /* ── Popup HTML ──────────────────────────────────────────────────────── */
-function lakeHTML(s,w){
-  var r=s[w],v=vol(s.cap,s.head),h=dh(v,r.area),rv2=rv(h,r.dlen);
-  return"<div class='lh'><div class='lt2'>"+r.n+"</div>"+
+function lakeHTML(s,w,cap){
+  cap=cap||s.cap;
+  var r=s[w],v=vol(cap,s.head);
+  var a=r.fixed?r.area:scaledArea(r.area,s.cap,cap);
+  var html="<div class='lh'><div class='lt2'>"+r.n+"</div>"+
     "<span class='lt'>"+(w==="u"?"&#9650; Upper":"&#9660; Lower")+" Reservoir</span></div>"+
     "<table class='it'>"+
-    "<tr><td>Latitude</td><td>"+r.lat.toFixed(3)+"&deg;N</td></tr>"+
-    "<tr><td>Longitude</td><td>"+r.lng.toFixed(3)+"&deg;E</td></tr>"+
+    "<tr><td>Latitude</td><td>"+r.lat.toFixed(4)+"&deg;N</td></tr>"+
+    "<tr><td>Longitude</td><td>"+r.lng.toFixed(4)+"&deg;E</td></tr>"+
     "<tr><td>Elevation</td><td>"+r.elev+" m</td></tr>"+
-    "<tr><td>Water Area</td><td>"+r.area.toFixed(2)+" km&sup2;</td></tr>"+
-    "<tr><td>Water Volume</td><td>"+v.toFixed(1)+" GL</td></tr>"+
-    "<tr><td>Dam Wall Height</td><td>"+h.toFixed(0)+" m</td></tr>"+
-    "<tr><td>Dam Wall Length</td><td>"+r.dlen+" m</td></tr>"+
-    "<tr><td>Rock Volume</td><td>"+rv2.toFixed(2)+" GL</td></tr>"+
-    "<tr><td>Water / Rock Ratio</td><td>"+(v/rv2).toFixed(1)+"</td></tr>"+
-    "<tr><td>Pair</td><td>"+s.name+"</td></tr>"+
+    "<tr><td>Water Area</td><td>"+a.toFixed(2)+" km&sup2;</td></tr>"+
+    "<tr><td>Water Volume</td><td>"+v.toFixed(1)+" GL</td></tr>";
+  if(r.fixed){
+    html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>"+
+      "<tr><td>Original capacity</td><td>400 MW hydro</td></tr>";
+    if(s.anuWR)html+="<tr><td>ANU W/R (pair)</td><td>"+s.anuWR+"</td></tr>"+
+      "<tr><td>ANU full design</td><td>"+s.anuGWh+" GWh / "+s.anuH+" h</td></tr>";
+  }else{
+    var h2=dh(v,a),rv2=rv(h2,r.dlen);
+    html+="<tr><td>Dam Height</td><td>"+h2.toFixed(0)+" m</td></tr>"+
+      "<tr><td>Dam Wall Length</td><td>"+r.dlen+" m</td></tr>"+
+      "<tr><td>Rock Volume</td><td>"+rv2.toFixed(2)+" GL</td></tr>"+
+      "<tr><td>Water / Rock</td><td>"+(v/rv2).toFixed(1)+"</td></tr>";
+  }
+  html+="<tr><td>Pair</td><td>"+s.name+"</td></tr>"+
     "<tr><td>Cost Class</td><td><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span></td></tr>"+
     "</table>";
+  return html;
 }
-function pipeHTML(s){
-  var cap=s.cap,m=metrics(s,cap);
-  var mn=Math.max(0.5,parseFloat((cap*0.2).toFixed(1)));
-  var mx=parseFloat((cap*4.0).toFixed(0));
+function pipeHTML(s,capOvr){
+  var cap=capOvr||s.cap,m=metrics(s,cap);
+  var mn=Math.max(0.5,parseFloat((s.cap*0.2).toFixed(1)));
+  var mx=s.anuGWh||parseFloat((s.cap*4.0).toFixed(0));
+  var lFixed=!!s.l.fixed;
+  var lhTxt=lFixed?"existing":m.lh.toFixed(0);
+  var lrTxt=lFixed?"—":m.lr.toFixed(2);
+  var lwTxt=lFixed?"—":m.lwr.toFixed(1);
+  var note=s.anuGWh?"<div style='font-size:10px;color:#6c9ab5;margin-bottom:6px'>ANU design: "+s.anuGWh+" GWh / "+s.anuH+" h / "+Math.round(s.anuGWh/s.anuH*1000)+" MW  (slider shows 6 h basis)</div>":"";
   return"<div class='ph'><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span><h3>"+s.name+"</h3></div>"+
     "<table class='it'>"+
     "<tr><td>Head</td><td>"+s.head+" m</td></tr>"+
-    "<tr><td>Penstock Distance</td><td>"+s.dist+" km</td></tr>"+
-    "<tr><td>Slope (head/dist)</td><td>"+s.slope.toFixed(3)+"</td></tr>"+
-    "<tr><td>Upper Reservoir</td><td>"+s.u.n+"</td></tr>"+
-    "<tr><td>Lower Reservoir</td><td>"+s.l.n+"</td></tr>"+
-    "</table>"+
+    "<tr><td>Penstock / Tunnel</td><td>"+s.dist+" km</td></tr>"+
+    "<tr><td>Slope</td><td>"+s.slope.toFixed(3)+"</td></tr>"+
+    "<tr><td>Upper</td><td>"+s.u.n+"</td></tr>"+
+    "<tr><td>Lower</td><td>"+s.l.n+(lFixed?" <em style='color:#6c9ab5'>(existing)</em>":"")+"</td></tr>"+
+    "</table>"+note+
     "<div class='cs'>"+
       "<div class='cl'><span>Energy Storage Capacity</span><span class='cv' id='cv-"+s.id+"'>"+cap.toFixed(1)+" GWh</span></div>"+
       "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\""+s.id+"\",this.value)'>"+
@@ -210,9 +297,9 @@ function pipeHTML(s){
       "<thead><tr><th>Parameter</th><th>Upper</th><th>Lower</th></tr></thead>"+
       "<tbody>"+
         "<tr><td>Volume (GL)</td><td id='vu-"+s.id+"'>"+m.v.toFixed(1)+"</td><td id='vl-"+s.id+"'>"+m.v.toFixed(1)+"</td></tr>"+
-        "<tr><td>Dam Height (m)</td><td id='du-"+s.id+"'>"+m.uh.toFixed(0)+"</td><td id='dl-"+s.id+"'>"+m.lh.toFixed(0)+"</td></tr>"+
-        "<tr><td>Rock Volume (GL)</td><td id='ru-"+s.id+"'>"+m.ur.toFixed(2)+"</td><td id='rl-"+s.id+"'>"+m.lr.toFixed(2)+"</td></tr>"+
-        "<tr><td>W / R Ratio</td><td id='wu-"+s.id+"'>"+m.uwr.toFixed(1)+"</td><td id='wl-"+s.id+"'>"+m.lwr.toFixed(1)+"</td></tr>"+
+        "<tr><td>Dam Height (m)</td><td id='du-"+s.id+"'>"+m.uh.toFixed(0)+"</td><td id='dl-"+s.id+"'>"+lhTxt+"</td></tr>"+
+        "<tr><td>Rock Vol (GL)</td><td id='ru-"+s.id+"'>"+m.ur.toFixed(2)+"</td><td id='rl-"+s.id+"'>"+lrTxt+"</td></tr>"+
+        "<tr><td>W / R</td><td id='wu-"+s.id+"'>"+m.uwr.toFixed(1)+"</td><td id='wl-"+s.id+"'>"+lwTxt+"</td></tr>"+
       "</tbody>"+
     "</table>"+
     "<div class='os'>"+
@@ -234,20 +321,21 @@ var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)
 var dotCache={};     // site.id -> circleMarker
 
-/* Build detail group (lake polygons + pipeline) for one site */
-function buildDetail(s,i){
+/* Build detail group (lake polygons + pipeline) for one site.
+   capOvr overrides s.cap for polygon sizing (used by upd() on slider drag) */
+function buildDetail(s,i,capOvr){
+  var cap=capOvr||s.cap;
   var col=clsCol(s.cls);
   var grp=L.featureGroup();
-  var up=L.polygon(poly(s.u.lat,s.u.lng,s.u.area,i),
+  var up=L.polygon(resPoly(s.u,s,cap,true),
     {color:col,fillColor:"#4db8ff",fillOpacity:.6,weight:2,opacity:.95});
-  up.bindPopup(lakeHTML(s,"u"),{maxWidth:360});
-  var lo=L.polygon(poly(s.l.lat,s.l.lng,s.l.area,i+5),
+  up.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+  var lo=L.polygon(resPoly(s.l,s,cap,false),
     {color:col,fillColor:"#80d4ff",fillOpacity:.45,weight:2,opacity:.95});
-  lo.bindPopup(lakeHTML(s,"l"),{maxWidth:360});
+  lo.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
   var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
     {color:col,weight:3,dashArray:"8 5",opacity:.95});
-  pipe.bindPopup(pipeHTML(s),{maxWidth:400});
-  /* hover effects */
+  pipe.bindPopup(pipeHTML(s,cap),{maxWidth:420});
   function hov(lyr,f1,f2){
     lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
     lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
@@ -256,6 +344,8 @@ function buildDetail(s,i){
   pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
   pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
   grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
+  /* store refs for live polygon resize */
+  grp._upLayer=up;grp._loLayer=lo;grp._pipeLayer=pipe;grp._cap=cap;
   return grp;
 }
 
@@ -330,23 +420,36 @@ map.on("click",function(){if(expanded)collapse();});
 
 build();
 
-/* ── Live capacity slider ─────────────────────────────────────────────── */
+/* ── Live capacity slider — updates table AND resizes lake polygons ──── */
 window.upd=function(id,val){
   var cap=parseFloat(val);
   var s=SITES.find(function(x){return x.id===id;});
   if(!s)return;
   var m=metrics(s,cap);
+  var lFixed=!!s.l.fixed;
+  /* update table cells */
   document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
   document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
   document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
   document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
-  document.getElementById("dl-"+id).textContent=m.lh.toFixed(0);
+  if(!lFixed)document.getElementById("dl-"+id).textContent=m.lh.toFixed(0);
   document.getElementById("ru-"+id).textContent=m.ur.toFixed(2);
-  document.getElementById("rl-"+id).textContent=m.lr.toFixed(2);
+  if(!lFixed)document.getElementById("rl-"+id).textContent=m.lr.toFixed(2);
   document.getElementById("wu-"+id).textContent=m.uwr.toFixed(1);
-  document.getElementById("wl-"+id).textContent=m.lwr.toFixed(1);
+  if(!lFixed)document.getElementById("wl-"+id).textContent=m.lwr.toFixed(1);
   document.getElementById("pw-"+id).textContent=m.pw.toFixed(0)+" MW";
   document.getElementById("pp-"+id).textContent=m.pop.toLocaleString();
+  /* live resize lake polygons */
+  if(expanded===id&&detailCache[id]){
+    var grp=detailCache[id];
+    grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
+    grp._upLayer.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+    if(!lFixed){
+      grp._loLayer.setLatLngs(resPoly(s.l,s,cap,false));
+      grp._loLayer.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
+    }
+    grp._cap=cap;
+  }
 };
 
 window.applyFilters=function(){

@@ -175,7 +175,7 @@ function pipeHTML(s){
     "</table>"+
     "<div class='cs'>"+
       "<div class='cl'><span>Energy Storage Capacity</span><span class='cv' id='cv-"+s.id+"'>"+cap.toFixed(1)+" GWh</span></div>"+
-      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\"'"+s.id+"'\",this.value)'>"+
+      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\"" +s.id+"\",this.value)'>"+
     "</div>"+
     "<table class='ct'>"+
       "<thead><tr><th>Parameter</th><th>Upper</th><th>Lower</th></tr></thead>"+

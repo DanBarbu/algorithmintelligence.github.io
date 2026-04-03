@@ -21,9 +21,19 @@
     #map{position:fixed;top:58px;left:0;right:0;bottom:28px}
     #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#0a1520;border-top:1px solid #1a3a5c;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#6c9ab5;z-index:999}
     #foot span{color:#7fc4e8;font-weight:600}
+    /* Info panel shown when a pair is expanded */
+    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#cde;display:none;max-width:230px}
+    #infopanel .ip-name{font-size:13px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
+    #infopanel .ip-hint{font-size:11px;color:#6c9ab5;margin-top:5px;line-height:1.4}
+    #infopanel .ip-close{float:right;cursor:pointer;color:#e74c3c;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
+    /* Popups */
     .leaflet-popup-content-wrapper{background:rgba(10,21,32,.97)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#e8f4f8!important;box-shadow:0 4px 24px rgba(0,100,200,.35)!important}
     .leaflet-popup-tip{background:rgba(10,21,32,.97)!important}
     .leaflet-popup-content{margin:14px!important;min-width:270px}
+    /* Tooltip */
+    .hb-tip{background:rgba(10,21,32,.95)!important;border:1px solid #2a6496!important;color:#e8f4f8!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,100,200,.3)!important;padding:6px 10px!important}
+    .hb-tip::before{display:none}
+    /* Popup content styles */
     .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #1a3a5c;padding-bottom:8px}
     .ph h3{font-size:14px;color:#7fc4e8;flex:1;margin:0}
     .cb{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.4px}
@@ -56,7 +66,11 @@
     .legend h4{font-size:12px;color:#7fc4e8;margin-bottom:7px;border-bottom:1px solid #1a3a5c;padding-bottom:4px;letter-spacing:.3px}
     .li{display:flex;align-items:center;gap:8px;margin-bottom:5px}
     .ls{width:15px;height:15px;border-radius:3px;flex-shrink:0}
+    .lc{width:15px;height:15px;border-radius:50%;flex-shrink:0}
     .lp{width:22px;height:0;border-top:3px dashed;flex-shrink:0}
+    /* Expanded dot pulse ring */
+    @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+    .dot-pulse{animation:pulse 1.5s ease-out infinite}
   </style>
 </head>
 <body>
@@ -84,10 +98,18 @@
   </div>
 </div>
 <div id="map"></div>
-<div id="foot"><div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div><div><span id="cnt">8</span> PHES pairs displayed</div></div>
+<div id="infopanel">
+  <span class="ip-close" onclick="collapse()">&#10005;</span>
+  <div class="ip-name" id="ip-name"></div>
+  <div id="ip-meta"></div>
+  <div class="ip-hint">Click a lake polygon &rarr; reservoir data<br>Click the dashed pipeline &rarr; capacity &amp; slider</div>
+</div>
+<div id="foot">
+  <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
+  <div><span id="cnt">8</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const ETA=0.75;
 const SITES=[
   {id:"MY001",name:"Cameron Ridge",cls:"AAA",
    u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,dlen:680},
@@ -122,6 +144,8 @@ const SITES=[
    l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,dlen:860},
    head:770,dist:5.5,slope:0.140,cap:22.0}
 ];
+
+/* ── Calculation helpers ──────────────────────────────────────────────── */
 function vol(cap,head){return cap/(head*0.002044);}
 function dh(vGL,aKm2){return 2.8*vGL/aKm2;}
 function rv(h,len){return 2*h*h*len/1e6;}
@@ -132,6 +156,8 @@ function metrics(s,cap){
   return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:v/ur,lwr:v/lr,
          pw:cap*1000/6,pop:Math.round(cap*850000)};
 }
+
+/* ── Lake polygon generator ───────────────────────────────────────────── */
 var IRR=[1.00,0.85,1.10,0.78,0.95,1.15,0.88,1.05,0.92,0.80,1.08,0.97];
 function poly(lat,lng,area,seed){
   var r=Math.sqrt(area/Math.PI)/111,pts=[],n=12;
@@ -142,7 +168,10 @@ function poly(lat,lng,area,seed){
   }
   pts.push(pts[0]);return pts;
 }
+
 function clsCol(c){return{AAA:"#f4a800",AA:"#e74c3c",A:"#27ae60"}[c]||"#2a6496";}
+
+/* ── Popup HTML ──────────────────────────────────────────────────────── */
 function lakeHTML(s,w){
   var r=s[w],v=vol(s.cap,s.head),h=dh(v,r.area),rv2=rv(h,r.dlen);
   return"<div class='lh'><div class='lt2'>"+r.n+"</div>"+
@@ -175,7 +204,7 @@ function pipeHTML(s){
     "</table>"+
     "<div class='cs'>"+
       "<div class='cl'><span>Energy Storage Capacity</span><span class='cv' id='cv-"+s.id+"'>"+cap.toFixed(1)+" GWh</span></div>"+
-      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\"" +s.id+"\",this.value)'>"+
+      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\""+s.id+"\",this.value)'>"+
     "</div>"+
     "<table class='ct'>"+
       "<thead><tr><th>Parameter</th><th>Upper</th><th>Lower</th></tr></thead>"+
@@ -192,12 +221,85 @@ function pipeHTML(s){
       "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
     "</div>";
 }
+
+/* ── Map ─────────────────────────────────────────────────────────────── */
 var map=L.map("map",{center:[4.2,109.5],zoom:6});
 L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
   {attribution:"&copy; OSM &copy; CartoDB",maxZoom:19}).addTo(map);
-var master=L.featureGroup().addTo(map);
+
+var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
+var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
+
+var expanded=null;   // currently expanded site ID
+var detailCache={};  // site.id -> L.featureGroup (built on first expand)
+var dotCache={};     // site.id -> circleMarker
+
+/* Build detail group (lake polygons + pipeline) for one site */
+function buildDetail(s,i){
+  var col=clsCol(s.cls);
+  var grp=L.featureGroup();
+  var up=L.polygon(poly(s.u.lat,s.u.lng,s.u.area,i),
+    {color:col,fillColor:"#4db8ff",fillOpacity:.6,weight:2,opacity:.95});
+  up.bindPopup(lakeHTML(s,"u"),{maxWidth:360});
+  var lo=L.polygon(poly(s.l.lat,s.l.lng,s.l.area,i+5),
+    {color:col,fillColor:"#80d4ff",fillOpacity:.45,weight:2,opacity:.95});
+  lo.bindPopup(lakeHTML(s,"l"),{maxWidth:360});
+  var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
+    {color:col,weight:3,dashArray:"8 5",opacity:.95});
+  pipe.bindPopup(pipeHTML(s),{maxWidth:400});
+  /* hover effects */
+  function hov(lyr,f1,f2){
+    lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
+    lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
+  }
+  hov(up,.88,.60);hov(lo,.75,.45);
+  pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
+  pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
+  grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
+  return grp;
+}
+
+/* Collapse the currently expanded pair */
+window.collapse=function(){
+  if(!expanded)return;
+  var grp=detailCache[expanded];
+  if(grp)detailLayer.removeLayer(grp);
+  map.closePopup();
+  /* restore dot appearance */
+  var dot=dotCache[expanded];
+  if(dot){var col=clsCol(dot._site.cls);dot.setStyle({radius:dot._r,fillOpacity:.75,weight:2,color:col,fillColor:col});}
+  document.getElementById("infopanel").style.display="none";
+  expanded=null;
+};
+
+/* Expand a pair: show its lake polygons + pipeline */
+function expand(s,i){
+  if(expanded===s.id){collapse();return;}
+  collapse();
+  if(!detailCache[s.id])detailCache[s.id]=buildDetail(s,i);
+  detailLayer.addLayer(detailCache[s.id]);
+  expanded=s.id;
+  /* zoom to the pair */
+  map.fitBounds(detailCache[s.id].getBounds().pad(0.7),{maxZoom:13,animate:true});
+  /* highlight the dot */
+  var dot=dotCache[s.id];
+  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:3,color:"#fff",fillColor:clsCol(s.cls)});
+  /* show info panel */
+  var ip=document.getElementById("infopanel");
+  document.getElementById("ip-name").textContent=s.name;
+  document.getElementById("ip-meta").innerHTML=
+    "<span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span> &nbsp;"+
+    s.cap.toFixed(1)+" GWh &bull; "+s.head+" m head";
+  ip.style.display="block";
+}
+
+/* Build / rebuild all dot markers */
 function build(){
-  master.clearLayers();
+  dotLayer.clearLayers();
+  detailLayer.clearLayers();
+  detailCache={};dotCache={};
+  if(expanded)document.getElementById("infopanel").style.display="none";
+  expanded=null;
   var mn=parseFloat(document.getElementById("minCap").value);
   var cf=document.getElementById("clsF").value;
   var cnt=0;
@@ -206,27 +308,29 @@ function build(){
     if(cf!=="all"&&s.cls!==cf)return;
     cnt++;
     var col=clsCol(s.cls);
-    var up=L.polygon(poly(s.u.lat,s.u.lng,s.u.area,i),
-      {color:col,fillColor:"#4db8ff",fillOpacity:.55,weight:2,opacity:.9});
-    up.bindPopup(lakeHTML(s,"u"),{maxWidth:360});
-    var lo=L.polygon(poly(s.l.lat,s.l.lng,s.l.area,i+5),
-      {color:col,fillColor:"#80d4ff",fillOpacity:.42,weight:2,opacity:.9});
-    lo.bindPopup(lakeHTML(s,"l"),{maxWidth:360});
-    var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
-      {color:col,weight:3,dashArray:"8 5",opacity:.9});
-    pipe.bindPopup(pipeHTML(s),{maxWidth:400});
-    function hover(layer,fo1,fo2,w1,w2){
-      layer.on("mouseover",function(){this.setStyle({fillOpacity:fo1,weight:w1});});
-      layer.on("mouseout",function(){this.setStyle({fillOpacity:fo2,weight:w2});});
-    }
-    hover(up,.80,.55,3,2);hover(lo,.75,.42,3,2);
-    pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
-    pipe.on("mouseout",function(){this.setStyle({weight:3,opacity:.9});});
-    master.addLayer(up);master.addLayer(lo);master.addLayer(pipe);
+    var midLat=(s.u.lat+s.l.lat)/2;
+    var midLng=(s.u.lng+s.l.lng)/2;
+    var r=Math.max(9,Math.min(20,8+Math.sqrt(s.cap)*1.8));
+    var dot=L.circleMarker([midLat,midLng],
+      {radius:r,color:col,fillColor:col,fillOpacity:.75,weight:2,opacity:.9});
+    dot._site=s;dot._r=r;
+    dot.bindTooltip(
+      "<b>"+s.name+"</b><br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
+      "<br><small>&#128722; Click to view reservoirs &amp; pipeline</small>",
+      {className:"hb-tip",direction:"top",offset:[0,-4]});
+    dot.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
+    dotLayer.addLayer(dot);
+    dotCache[s.id]=dot;
   });
   document.getElementById("cnt").textContent=cnt;
 }
+
+/* Collapse on background click */
+map.on("click",function(){if(expanded)collapse();});
+
 build();
+
+/* ── Live capacity slider ─────────────────────────────────────────────── */
 window.upd=function(id,val){
   var cap=parseFloat(val);
   var s=SITES.find(function(x){return x.id===id;});
@@ -244,25 +348,28 @@ window.upd=function(id,val){
   document.getElementById("pw-"+id).textContent=m.pw.toFixed(0)+" MW";
   document.getElementById("pp-"+id).textContent=m.pop.toLocaleString();
 };
+
 window.applyFilters=function(){
   var v=parseFloat(document.getElementById("minCap").value);
   document.getElementById("minCapD").textContent=v.toFixed(1)+" GWh";
   build();
 };
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
 var leg=L.control({position:"bottomright"});
 leg.onAdd=function(){
   var d=L.DomUtil.create("div","legend");
   d.innerHTML=
     "<h4>COST CLASS</h4>"+
-    "<div class='li'><div class='ls' style='background:#f4a800;border:2px solid #f4a800'></div><span>AAA &mdash; Premium</span></div>"+
-    "<div class='li'><div class='ls' style='background:#e74c3c;border:2px solid #e74c3c'></div><span>AA &mdash; High value</span></div>"+
-    "<div class='li'><div class='ls' style='background:#27ae60;border:2px solid #27ae60'></div><span>A &mdash; Viable</span></div>"+
-    "<h4 style='margin-top:9px'>MAP LAYERS</h4>"+
-    "<div class='li'><div class='ls' style='background:#4db8ff88;border:2px solid #aaa'></div><span>Upper reservoir (polygon)</span></div>"+
-    "<div class='li'><div class='ls' style='background:#80d4ff66;border:2px solid #aaa'></div><span>Lower reservoir (polygon)</span></div>"+
-    "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel route</span></div>"+
+    "<div class='li'><div class='lc' style='background:#f4a800'></div><span>AAA &mdash; Premium</span></div>"+
+    "<div class='li'><div class='lc' style='background:#e74c3c'></div><span>AA &mdash; High value</span></div>"+
+    "<div class='li'><div class='lc' style='background:#27ae60'></div><span>A &mdash; Viable</span></div>"+
+    "<h4 style='margin-top:9px'>WHEN EXPANDED</h4>"+
+    "<div class='li'><div class='ls' style='background:#4db8ff88;border:2px solid #aaa'></div><span>Upper reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#80d4ff66;border:2px solid #aaa'></div><span>Lower reservoir</span></div>"+
+    "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel</span></div>"+
     "<div style='margin-top:8px;font-size:10px;color:#6c9ab5;border-top:1px solid #1a3a5c;padding-top:6px'>"+
-    "Click lake area &rarr; reservoir data<br>Click pipeline &rarr; capacity table &amp; slider</div>";
+    "Dot size &prop; storage capacity<br>Click dot &rarr; expand pair<br>Click map &rarr; collapse</div>";
   return d;
 };
 leg.addTo(map);

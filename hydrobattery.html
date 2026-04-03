@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Malaysia Hydrobattery Atlas — ANU PHES</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Segoe UI",Arial,sans-serif;background:#0d1b2a;color:#e8f4f8;overflow:hidden}
+    #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1b2a,#1a3a5c);border-bottom:2px solid #2a6496;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between}
+    .h-left{display:flex;align-items:center;gap:12px}
+    .h-logo{width:36px;height:36px;background:#1a6eb5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .h-title{font-size:15px;font-weight:700;color:#7fc4e8;letter-spacing:.4px}
+    .h-sub{font-size:11px;color:#6c9ab5;margin-top:1px}
+    .h-ctrl{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+    .fg{display:flex;align-items:center;gap:6px;font-size:12px;color:#9ecde8;white-space:nowrap}
+    .fg input[type=range]{width:110px;accent-color:#2a6496;cursor:pointer}
+    .fg select{background:#1a3a5c;border:1px solid #2a6496;border-radius:4px;color:#e8f4f8;padding:3px 7px;font-size:12px;cursor:pointer}
+    .capd{color:#7fc4e8;font-weight:600;min-width:58px;font-size:12px}
+    #map{position:fixed;top:58px;left:0;right:0;bottom:28px}
+    #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#0a1520;border-top:1px solid #1a3a5c;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#6c9ab5;z-index:999}
+    #foot span{color:#7fc4e8;font-weight:600}
+    /* Info panel shown when a pair is expanded */
+    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#cde;display:none;max-width:230px}
+    #infopanel .ip-name{font-size:13px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
+    #infopanel .ip-hint{font-size:11px;color:#6c9ab5;margin-top:5px;line-height:1.4}
+    #infopanel .ip-close{float:right;cursor:pointer;color:#e74c3c;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
+    /* Popups */
+    .leaflet-popup-content-wrapper{background:rgba(10,21,32,.97)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#e8f4f8!important;box-shadow:0 4px 24px rgba(0,100,200,.35)!important}
+    .leaflet-popup-tip{background:rgba(10,21,32,.97)!important}
+    .leaflet-popup-content{margin:14px!important;min-width:270px}
+    /* Tooltip */
+    .hb-tip{background:rgba(10,21,32,.95)!important;border:1px solid #2a6496!important;color:#e8f4f8!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,100,200,.3)!important;padding:6px 10px!important}
+    .hb-tip::before{display:none}
+    /* Popup content styles */
+    .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #1a3a5c;padding-bottom:8px}
+    .ph h3{font-size:14px;color:#7fc4e8;flex:1;margin:0}
+    .cb{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.4px}
+    .cb.aaa{background:#b8860b;color:#fff8dc}
+    .cb.aa{background:#c0392b;color:#ffe0e0}
+    .cb.a{background:#1a6b3a;color:#ccffcc}
+    .lt{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a3a5c;color:#7fc4e8;border:1px solid #2a6496;white-space:nowrap}
+    .it{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+    .it td{padding:3px 6px;border-bottom:1px solid #0f2030}
+    .it td:first-child{color:#9ecde8;width:58%}
+    .it td:last-child{font-weight:600}
+    .cs{margin:10px 0;padding:8px 10px;background:#060f18;border-radius:6px;border:1px solid #1a3a5c}
+    .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#9ecde8}
+    .cv{color:#7fc4e8;font-weight:700;font-size:14px}
+    .csl{width:100%;accent-color:#2a6496;cursor:pointer}
+    .ct{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
+    .ct th{background:#1a3a5c;color:#7fc4e8;padding:4px 6px;font-size:11px;text-align:center}
+    .ct th:first-child{text-align:left}
+    .ct td{padding:3px 6px;border-bottom:1px solid #060f18;text-align:center}
+    .ct td:first-child{color:#9ecde8;text-align:left}
+    .ct tr:hover td{background:#1a2535}
+    .os{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .or{background:#060f18;border-radius:5px;padding:5px 8px;text-align:center;border:1px solid #1a3a5c}
+    .or span{display:block;font-size:10px;color:#9ecde8;margin-bottom:2px}
+    .or strong{font-size:13px;color:#7fc4e8}
+    .or.full{grid-column:1/-1}
+    .lh{margin-bottom:8px}
+    .lt2{font-size:14px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
+    .legend{background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:12px;font-size:12px;color:#cde}
+    .legend h4{font-size:12px;color:#7fc4e8;margin-bottom:7px;border-bottom:1px solid #1a3a5c;padding-bottom:4px;letter-spacing:.3px}
+    .li{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+    .ls{width:15px;height:15px;border-radius:3px;flex-shrink:0}
+    .lc{width:15px;height:15px;border-radius:50%;flex-shrink:0}
+    .lp{width:22px;height:0;border-top:3px dashed;flex-shrink:0}
+    /* Expanded dot pulse ring */
+    @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+    .dot-pulse{animation:pulse 1.5s ease-out infinite}
+  </style>
+</head>
+<body>
+<div id="hdr">
+  <div class="h-left">
+    <div class="h-logo">&#128167;</div>
+    <div>
+      <div class="h-title">Malaysia Hydrobattery Atlas</div>
+      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Off-river greenfield sites</div>
+    </div>
+  </div>
+  <div class="h-ctrl">
+    <div class="fg"><label>Min. Capacity:</label>
+      <input type="range" id="minCap" min="0" max="25" step="0.5" value="0" oninput="applyFilters()"/>
+      <span class="capd" id="minCapD">0 GWh</span>
+    </div>
+    <div class="fg"><label>Cost Class:</label>
+      <select id="clsF" onchange="applyFilters()">
+        <option value="all">All Classes</option>
+        <option value="AAA">AAA &mdash; Premium</option>
+        <option value="AA">AA &mdash; High value</option>
+        <option value="A">A &mdash; Viable</option>
+      </select>
+    </div>
+  </div>
+</div>
+<div id="map"></div>
+<div id="infopanel">
+  <span class="ip-close" onclick="collapse()">&#10005;</span>
+  <div class="ip-name" id="ip-name"></div>
+  <div id="ip-meta"></div>
+  <div class="ip-hint">Click a lake polygon &rarr; reservoir data<br>Click the dashed pipeline &rarr; capacity &amp; slider</div>
+</div>
+<div id="foot">
+  <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
+  <div><span id="cnt">8</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const SITES=[
+  {id:"MY001",name:"Cameron Ridge",cls:"AAA",
+   u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,dlen:680},
+   l:{n:"Telom Valley",lat:4.462,lng:101.435,elev:680,area:1.20,dlen:820},
+   head:740,dist:5.8,slope:0.128,cap:18.9},
+  {id:"MY002",name:"Titiwangsa Peak",cls:"AA",
+   u:{n:"Ulu Slim Upper",lat:3.751,lng:101.381,elev:1580,area:0.72,dlen:620},
+   l:{n:"Slim Valley",lat:3.712,lng:101.415,elev:820,area:1.05,dlen:780},
+   head:760,dist:6.2,slope:0.123,cap:16.0},
+  {id:"MY003",name:"Fraser Highland",cls:"A",
+   u:{n:"Ulu Semantan Upper",lat:3.721,lng:101.752,elev:1200,area:0.95,dlen:730},
+   l:{n:"Semantan Reservoir",lat:3.681,lng:101.783,elev:450,area:1.35,dlen:880},
+   head:750,dist:5.4,slope:0.139,cap:21.5},
+  {id:"MY004",name:"Genting Sempah",cls:"A",
+   u:{n:"Genting Upper",lat:3.441,lng:101.801,elev:1300,area:0.68,dlen:590},
+   l:{n:"Klang Gates",lat:3.401,lng:101.832,elev:540,area:0.98,dlen:750},
+   head:760,dist:5.9,slope:0.129,cap:12.5},
+  {id:"MY005",name:"Crocker Range",cls:"AAA",
+   u:{n:"Sg. Pegalan Upper",lat:5.851,lng:116.301,elev:1480,area:1.05,dlen:790},
+   l:{n:"Pegalan Valley",lat:5.801,lng:116.341,elev:680,area:1.42,dlen:930},
+   head:800,dist:6.8,slope:0.118,cap:25.8},
+  {id:"MY006",name:"Kelabit Highlands",cls:"AA",
+   u:{n:"Bario Upper",lat:3.741,lng:115.501,elev:1150,area:0.88,dlen:700},
+   l:{n:"Pa Lungan",lat:3.701,lng:115.535,elev:380,area:1.18,dlen:840},
+   head:770,dist:5.6,slope:0.138,cap:20.8},
+  {id:"MY007",name:"Ulu Endau",cls:"A",
+   u:{n:"Sg. Endau Upper",lat:2.651,lng:103.481,elev:980,area:0.78,dlen:650},
+   l:{n:"Endau Reservoir",lat:2.611,lng:103.511,elev:230,area:1.08,dlen:780},
+   head:750,dist:5.2,slope:0.144,cap:14.5},
+  {id:"MY008",name:"Sabah Highland",cls:"AA",
+   u:{n:"Sg. Moyog Upper",lat:5.401,lng:116.851,elev:1350,area:0.92,dlen:720},
+   l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,dlen:860},
+   head:770,dist:5.5,slope:0.140,cap:22.0}
+];
+
+/* ── Calculation helpers ──────────────────────────────────────────────── */
+function vol(cap,head){return cap/(head*0.002044);}
+function dh(vGL,aKm2){return 2.8*vGL/aKm2;}
+function rv(h,len){return 2*h*h*len/1e6;}
+function metrics(s,cap){
+  var v=vol(cap,s.head);
+  var uh=dh(v,s.u.area),lh=dh(v,s.l.area);
+  var ur=rv(uh,s.u.dlen),lr=rv(lh,s.l.dlen);
+  return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:v/ur,lwr:v/lr,
+         pw:cap*1000/6,pop:Math.round(cap*850000)};
+}
+
+/* ── Lake polygon generator ───────────────────────────────────────────── */
+var IRR=[1.00,0.85,1.10,0.78,0.95,1.15,0.88,1.05,0.92,0.80,1.08,0.97];
+function poly(lat,lng,area,seed){
+  var r=Math.sqrt(area/Math.PI)/111,pts=[],n=12;
+  for(var i=0;i<n;i++){
+    var a=(i/n)*2*Math.PI-Math.PI/2;
+    var ri=r*IRR[(i+seed)%n];
+    pts.push([lat+ri*Math.cos(a)*0.92,lng+ri*Math.sin(a)]);
+  }
+  pts.push(pts[0]);return pts;
+}
+
+function clsCol(c){return{AAA:"#f4a800",AA:"#e74c3c",A:"#27ae60"}[c]||"#2a6496";}
+
+/* ── Popup HTML ──────────────────────────────────────────────────────── */
+function lakeHTML(s,w){
+  var r=s[w],v=vol(s.cap,s.head),h=dh(v,r.area),rv2=rv(h,r.dlen);
+  return"<div class='lh'><div class='lt2'>"+r.n+"</div>"+
+    "<span class='lt'>"+(w==="u"?"&#9650; Upper":"&#9660; Lower")+" Reservoir</span></div>"+
+    "<table class='it'>"+
+    "<tr><td>Latitude</td><td>"+r.lat.toFixed(3)+"&deg;N</td></tr>"+
+    "<tr><td>Longitude</td><td>"+r.lng.toFixed(3)+"&deg;E</td></tr>"+
+    "<tr><td>Elevation</td><td>"+r.elev+" m</td></tr>"+
+    "<tr><td>Water Area</td><td>"+r.area.toFixed(2)+" km&sup2;</td></tr>"+
+    "<tr><td>Water Volume</td><td>"+v.toFixed(1)+" GL</td></tr>"+
+    "<tr><td>Dam Wall Height</td><td>"+h.toFixed(0)+" m</td></tr>"+
+    "<tr><td>Dam Wall Length</td><td>"+r.dlen+" m</td></tr>"+
+    "<tr><td>Rock Volume</td><td>"+rv2.toFixed(2)+" GL</td></tr>"+
+    "<tr><td>Water / Rock Ratio</td><td>"+(v/rv2).toFixed(1)+"</td></tr>"+
+    "<tr><td>Pair</td><td>"+s.name+"</td></tr>"+
+    "<tr><td>Cost Class</td><td><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span></td></tr>"+
+    "</table>";
+}
+function pipeHTML(s){
+  var cap=s.cap,m=metrics(s,cap);
+  var mn=Math.max(0.5,parseFloat((cap*0.2).toFixed(1)));
+  var mx=parseFloat((cap*4.0).toFixed(0));
+  return"<div class='ph'><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span><h3>"+s.name+"</h3></div>"+
+    "<table class='it'>"+
+    "<tr><td>Head</td><td>"+s.head+" m</td></tr>"+
+    "<tr><td>Penstock Distance</td><td>"+s.dist+" km</td></tr>"+
+    "<tr><td>Slope (head/dist)</td><td>"+s.slope.toFixed(3)+"</td></tr>"+
+    "<tr><td>Upper Reservoir</td><td>"+s.u.n+"</td></tr>"+
+    "<tr><td>Lower Reservoir</td><td>"+s.l.n+"</td></tr>"+
+    "</table>"+
+    "<div class='cs'>"+
+      "<div class='cl'><span>Energy Storage Capacity</span><span class='cv' id='cv-"+s.id+"'>"+cap.toFixed(1)+" GWh</span></div>"+
+      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.5' value='"+cap+"' oninput='upd(\""+s.id+"\",this.value)'>"+
+    "</div>"+
+    "<table class='ct'>"+
+      "<thead><tr><th>Parameter</th><th>Upper</th><th>Lower</th></tr></thead>"+
+      "<tbody>"+
+        "<tr><td>Volume (GL)</td><td id='vu-"+s.id+"'>"+m.v.toFixed(1)+"</td><td id='vl-"+s.id+"'>"+m.v.toFixed(1)+"</td></tr>"+
+        "<tr><td>Dam Height (m)</td><td id='du-"+s.id+"'>"+m.uh.toFixed(0)+"</td><td id='dl-"+s.id+"'>"+m.lh.toFixed(0)+"</td></tr>"+
+        "<tr><td>Rock Volume (GL)</td><td id='ru-"+s.id+"'>"+m.ur.toFixed(2)+"</td><td id='rl-"+s.id+"'>"+m.lr.toFixed(2)+"</td></tr>"+
+        "<tr><td>W / R Ratio</td><td id='wu-"+s.id+"'>"+m.uwr.toFixed(1)+"</td><td id='wl-"+s.id+"'>"+m.lwr.toFixed(1)+"</td></tr>"+
+      "</tbody>"+
+    "</table>"+
+    "<div class='os'>"+
+      "<div class='or'><span>Power Output</span><strong id='pw-"+s.id+"'>"+m.pw.toFixed(0)+" MW</strong></div>"+
+      "<div class='or'><span>Round-trip Efficiency</span><strong>75 %</strong></div>"+
+      "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
+    "</div>";
+}
+
+/* ── Map ─────────────────────────────────────────────────────────────── */
+var map=L.map("map",{center:[4.2,109.5],zoom:6});
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+  {attribution:"&copy; OSM &copy; CartoDB",maxZoom:19}).addTo(map);
+
+var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
+var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
+
+var expanded=null;   // currently expanded site ID
+var detailCache={};  // site.id -> L.featureGroup (built on first expand)
+var dotCache={};     // site.id -> circleMarker
+
+/* Build detail group (lake polygons + pipeline) for one site */
+function buildDetail(s,i){
+  var col=clsCol(s.cls);
+  var grp=L.featureGroup();
+  var up=L.polygon(poly(s.u.lat,s.u.lng,s.u.area,i),
+    {color:col,fillColor:"#4db8ff",fillOpacity:.6,weight:2,opacity:.95});
+  up.bindPopup(lakeHTML(s,"u"),{maxWidth:360});
+  var lo=L.polygon(poly(s.l.lat,s.l.lng,s.l.area,i+5),
+    {color:col,fillColor:"#80d4ff",fillOpacity:.45,weight:2,opacity:.95});
+  lo.bindPopup(lakeHTML(s,"l"),{maxWidth:360});
+  var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
+    {color:col,weight:3,dashArray:"8 5",opacity:.95});
+  pipe.bindPopup(pipeHTML(s),{maxWidth:400});
+  /* hover effects */
+  function hov(lyr,f1,f2){
+    lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
+    lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
+  }
+  hov(up,.88,.60);hov(lo,.75,.45);
+  pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
+  pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
+  grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
+  return grp;
+}
+
+/* Collapse the currently expanded pair */
+window.collapse=function(){
+  if(!expanded)return;
+  var grp=detailCache[expanded];
+  if(grp)detailLayer.removeLayer(grp);
+  map.closePopup();
+  /* restore dot appearance */
+  var dot=dotCache[expanded];
+  if(dot){var col=clsCol(dot._site.cls);dot.setStyle({radius:dot._r,fillOpacity:.75,weight:2,color:col,fillColor:col});}
+  document.getElementById("infopanel").style.display="none";
+  expanded=null;
+};
+
+/* Expand a pair: show its lake polygons + pipeline */
+function expand(s,i){
+  if(expanded===s.id){collapse();return;}
+  collapse();
+  if(!detailCache[s.id])detailCache[s.id]=buildDetail(s,i);
+  detailLayer.addLayer(detailCache[s.id]);
+  expanded=s.id;
+  /* zoom to the pair */
+  map.fitBounds(detailCache[s.id].getBounds().pad(0.7),{maxZoom:13,animate:true});
+  /* highlight the dot */
+  var dot=dotCache[s.id];
+  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:3,color:"#fff",fillColor:clsCol(s.cls)});
+  /* show info panel */
+  var ip=document.getElementById("infopanel");
+  document.getElementById("ip-name").textContent=s.name;
+  document.getElementById("ip-meta").innerHTML=
+    "<span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span> &nbsp;"+
+    s.cap.toFixed(1)+" GWh &bull; "+s.head+" m head";
+  ip.style.display="block";
+}
+
+/* Build / rebuild all dot markers */
+function build(){
+  dotLayer.clearLayers();
+  detailLayer.clearLayers();
+  detailCache={};dotCache={};
+  if(expanded)document.getElementById("infopanel").style.display="none";
+  expanded=null;
+  var mn=parseFloat(document.getElementById("minCap").value);
+  var cf=document.getElementById("clsF").value;
+  var cnt=0;
+  SITES.forEach(function(s,i){
+    if(s.cap<mn)return;
+    if(cf!=="all"&&s.cls!==cf)return;
+    cnt++;
+    var col=clsCol(s.cls);
+    var midLat=(s.u.lat+s.l.lat)/2;
+    var midLng=(s.u.lng+s.l.lng)/2;
+    var r=Math.max(9,Math.min(20,8+Math.sqrt(s.cap)*1.8));
+    var dot=L.circleMarker([midLat,midLng],
+      {radius:r,color:col,fillColor:col,fillOpacity:.75,weight:2,opacity:.9});
+    dot._site=s;dot._r=r;
+    dot.bindTooltip(
+      "<b>"+s.name+"</b><br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
+      "<br><small>&#128722; Click to view reservoirs &amp; pipeline</small>",
+      {className:"hb-tip",direction:"top",offset:[0,-4]});
+    dot.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
+    dotLayer.addLayer(dot);
+    dotCache[s.id]=dot;
+  });
+  document.getElementById("cnt").textContent=cnt;
+}
+
+/* Collapse on background click */
+map.on("click",function(){if(expanded)collapse();});
+
+build();
+
+/* ── Live capacity slider ─────────────────────────────────────────────── */
+window.upd=function(id,val){
+  var cap=parseFloat(val);
+  var s=SITES.find(function(x){return x.id===id;});
+  if(!s)return;
+  var m=metrics(s,cap);
+  document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
+  document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
+  document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
+  document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
+  document.getElementById("dl-"+id).textContent=m.lh.toFixed(0);
+  document.getElementById("ru-"+id).textContent=m.ur.toFixed(2);
+  document.getElementById("rl-"+id).textContent=m.lr.toFixed(2);
+  document.getElementById("wu-"+id).textContent=m.uwr.toFixed(1);
+  document.getElementById("wl-"+id).textContent=m.lwr.toFixed(1);
+  document.getElementById("pw-"+id).textContent=m.pw.toFixed(0)+" MW";
+  document.getElementById("pp-"+id).textContent=m.pop.toLocaleString();
+};
+
+window.applyFilters=function(){
+  var v=parseFloat(document.getElementById("minCap").value);
+  document.getElementById("minCapD").textContent=v.toFixed(1)+" GWh";
+  build();
+};
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+var leg=L.control({position:"bottomright"});
+leg.onAdd=function(){
+  var d=L.DomUtil.create("div","legend");
+  d.innerHTML=
+    "<h4>COST CLASS</h4>"+
+    "<div class='li'><div class='lc' style='background:#f4a800'></div><span>AAA &mdash; Premium</span></div>"+
+    "<div class='li'><div class='lc' style='background:#e74c3c'></div><span>AA &mdash; High value</span></div>"+
+    "<div class='li'><div class='lc' style='background:#27ae60'></div><span>A &mdash; Viable</span></div>"+
+    "<h4 style='margin-top:9px'>WHEN EXPANDED</h4>"+
+    "<div class='li'><div class='ls' style='background:#4db8ff88;border:2px solid #aaa'></div><span>Upper reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#80d4ff66;border:2px solid #aaa'></div><span>Lower reservoir</span></div>"+
+    "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel</span></div>"+
+    "<div style='margin-top:8px;font-size:10px;color:#6c9ab5;border-top:1px solid #1a3a5c;padding-top:6px'>"+
+    "Dot size &prop; storage capacity<br>Click dot &rarr; expand pair<br>Click map &rarr; collapse</div>";
+  return d;
+};
+leg.addTo(map);
+</script>
+</body>
+</html>

@@ -78,8 +78,8 @@
   <div class="h-left">
     <div class="h-logo">&#128167;</div>
     <div>
-      <div class="h-title">Malaysia Hydrobattery Atlas</div>
-      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Kenyir Bluefield sites</div>
+      <div class="h-title">Malaysia &amp; Romania Hydrobattery Atlas</div>
+      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Bluefield sites</div>
     </div>
   </div>
   <div class="h-ctrl">
@@ -95,9 +95,12 @@
         <option value="A">A &mdash; Viable</option>
       </select>
     </div>
-    <div class="fg">
-      <button onclick="map.flyTo([4.97,102.72],9)" style="background:#1a3a5c;border:1px solid #2a6496;color:#7fc4e8;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">&#128285; Kenyir</button>
-      <button onclick="map.flyTo([4.2,109.5],6)" style="background:#1a3a5c;border:1px solid #2a6496;color:#7fc4e8;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">&#127482;&#127486; All Malaysia</button>
+    <div class="fg"><label>Country:</label>
+      <select id="cntF" onchange="applyFilters()">
+        <option value="all">All Countries</option>
+        <option value="MY">Malaysia</option>
+        <option value="RO">Romania</option>
+      </select>
     </div>
   </div>
 </div>
@@ -110,12 +113,13 @@
 </div>
 <div id="foot">
   <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
-  <div><span id="cnt">12</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
+  <div><span id="cnt">24</span> PHES pairs (MY + RO) &bull; click a dot to view reservoirs &amp; pipeline</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-/* ── Kenyir Lake polygon (145 m water level, Terengganu) ────────────────
-   Simplified boundary matching known reservoir outline ~260 km²           */
+/* ── Existing-reservoir polygons ─────────────────────────────────────────
+   Used as fixed lower (or upper) reservoirs for Bluefield PHES sites.    */
+/* Kenyir Lake, Terengganu MY — 145 m, ~260 km² */
 var KENYIR=[
   [4.740,102.728],[4.762,102.754],[4.778,102.773],[4.800,102.791],
   [4.825,102.813],[4.858,102.831],[4.893,102.846],[4.938,102.865],
@@ -125,69 +129,148 @@ var KENYIR=[
   [4.945,102.628],[4.898,102.611],[4.865,102.628],[4.838,102.651],
   [4.798,102.668],[4.765,102.690],[4.745,102.715],[4.740,102.728]
 ];
+/* Bakun Reservoir, Sarawak MY — 228 m, ~695 km² */
+var BAKUN=[
+  [2.758,114.220],[2.842,114.375],[2.952,114.418],[2.982,114.282],
+  [2.925,114.125],[2.862,114.058],[2.752,113.988],[2.658,114.025],
+  [2.582,114.118],[2.595,114.232],[2.685,114.282],[2.758,114.220]
+];
+/* Murum Reservoir, Sarawak MY — 566 m, ~245 km² */
+var MURUM=[
+  [2.852,114.448],[2.925,114.522],[2.948,114.498],[2.935,114.412],
+  [2.882,114.362],[2.812,114.348],[2.748,114.378],[2.762,114.432],
+  [2.818,114.472],[2.852,114.448]
+];
+/* Tarnița Lake, Cluj RO — 521 m, ~11 km² (lower reservoir for RO001) */
+var TARNITA=[
+  [46.682,23.258],[46.688,23.272],[46.695,23.284],[46.700,23.278],
+  [46.698,23.262],[46.692,23.252],[46.685,23.250],[46.682,23.258]
+];
+/* Vidraru Lake, Argeș RO — 830 m, ~9 km² (lower for RO002 Bluefield) */
+var VIDRARU=[
+  [45.352,24.612],[45.362,24.626],[45.372,24.620],[45.370,24.604],
+  [45.360,24.596],[45.350,24.600],[45.352,24.612]
+];
+/* Lookup map for fixed polygon keys */
+var FIXED_POLY={kenyir:KENYIR,bakun:BAKUN,murum:MURUM,tarnita:TARNITA,vidraru:VIDRARU};
 
 /* ── Sites ──────────────────────────────────────────────────────────────
+   cty = country code (MY / RO)
    area = base surface area at default cap (km²)
-   bear = valley axis bearing °N (for valley-shaped polygons)
-   l.fixed = true  →  lower reservoir is KENYIR (existing lake, no dam)
-   Kenyir Bluefield: head 90-130 m (existing lake as lower reservoir).
-   KY001 is ANU-confirmed: n05_e102_RES68377+RES_2011, Class AA,
-   head 107 m, vol 692.7 GL / 150 GWh at 50 h, W/R pair 182.7.          */
+   bear = valley axis °N (valley-shaped polygon)
+   r.fixed = 'key' → use FIXED_POLY[key] (existing reservoir)           */
 var SITES=[
-  /* — Peninsular greenfield off-river sites — */
-  {id:"MY001",name:"Cameron Ridge",cls:"AAA",
+
+  /* ════ MALAYSIA — Peninsular greenfield ════ */
+  {id:"MY001",name:"Cameron Ridge",cls:"AAA",cty:"MY",
    u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,bear:340,dlen:680},
    l:{n:"Telom Valley",lat:4.462,lng:101.435,elev:680,area:1.20,bear:160,dlen:820},
    head:740,dist:5.8,slope:0.128,cap:18.9},
-  {id:"MY002",name:"Titiwangsa Peak",cls:"AA",
+  {id:"MY002",name:"Titiwangsa Peak",cls:"AA",cty:"MY",
    u:{n:"Ulu Slim Upper",lat:3.751,lng:101.381,elev:1580,area:0.72,bear:350,dlen:620},
    l:{n:"Slim Valley",lat:3.712,lng:101.415,elev:820,area:1.05,bear:170,dlen:780},
    head:760,dist:6.2,slope:0.123,cap:16.0},
-  {id:"MY003",name:"Fraser Highland",cls:"A",
+  {id:"MY003",name:"Fraser Highland",cls:"A",cty:"MY",
    u:{n:"Ulu Semantan Upper",lat:3.721,lng:101.752,elev:1200,area:0.95,bear:20,dlen:730},
    l:{n:"Semantan Reservoir",lat:3.681,lng:101.783,elev:450,area:1.35,bear:200,dlen:880},
    head:750,dist:5.4,slope:0.139,cap:21.5},
-  {id:"MY004",name:"Genting Sempah",cls:"A",
+  {id:"MY004",name:"Genting Sempah",cls:"A",cty:"MY",
    u:{n:"Genting Upper",lat:3.441,lng:101.801,elev:1300,area:0.68,bear:315,dlen:590},
    l:{n:"Klang Gates",lat:3.401,lng:101.832,elev:540,area:0.98,bear:135,dlen:750},
    head:760,dist:5.9,slope:0.129,cap:12.5},
-  {id:"MY005",name:"Crocker Range",cls:"AAA",
+  {id:"MY009",name:"Kelantan Highland",cls:"AA",cty:"MY",
+   u:{n:"Ulu Galas Upper",lat:4.825,lng:101.918,elev:1080,area:0.82,bear:5,dlen:680},
+   l:{n:"Galas Valley Lower",lat:4.780,lng:101.952,elev:460,area:1.15,bear:185,dlen:800},
+   head:620,dist:6.8,slope:0.091,cap:16.2},
+  {id:"MY010",name:"Pahang Highlands",cls:"AA",cty:"MY",
+   u:{n:"Sg. Semantan Highland",lat:3.852,lng:102.048,elev:1120,area:0.95,bear:15,dlen:730},
+   l:{n:"Semantan Valley Lower",lat:3.812,lng:102.082,elev:380,area:1.32,bear:195,dlen:870},
+   head:740,dist:6.5,slope:0.114,cap:21.8},
+
+  /* ════ MALAYSIA — Borneo greenfield ════ */
+  {id:"MY005",name:"Crocker Range",cls:"AAA",cty:"MY",
    u:{n:"Sg. Pegalan Upper",lat:5.851,lng:116.301,elev:1480,area:1.05,bear:10,dlen:790},
    l:{n:"Pegalan Valley",lat:5.801,lng:116.341,elev:680,area:1.42,bear:190,dlen:930},
    head:800,dist:6.8,slope:0.118,cap:25.8},
-  {id:"MY006",name:"Kelabit Highlands",cls:"AA",
+  {id:"MY006",name:"Kelabit Highlands",cls:"AA",cty:"MY",
    u:{n:"Bario Upper",lat:3.741,lng:115.501,elev:1150,area:0.88,bear:30,dlen:700},
-   l:{n:"Pa Lungan",lat:3.701,lng:115.535,elev:380,area:1.18,bear:210,dlen:840},
+   l:{n:"Pa Lungan Lower",lat:3.701,lng:115.535,elev:380,area:1.18,bear:210,dlen:840},
    head:770,dist:5.6,slope:0.138,cap:20.8},
-  {id:"MY007",name:"Ulu Endau",cls:"A",
+  {id:"MY007",name:"Ulu Endau",cls:"A",cty:"MY",
    u:{n:"Sg. Endau Upper",lat:2.651,lng:103.481,elev:980,area:0.78,bear:355,dlen:650},
    l:{n:"Endau Reservoir",lat:2.611,lng:103.511,elev:230,area:1.08,bear:175,dlen:780},
    head:750,dist:5.2,slope:0.144,cap:14.5},
-  {id:"MY008",name:"Sabah Highland",cls:"AA",
+  {id:"MY008",name:"Sabah Highland",cls:"AA",cty:"MY",
    u:{n:"Sg. Moyog Upper",lat:5.401,lng:116.851,elev:1350,area:0.92,bear:5,dlen:720},
    l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,bear:185,dlen:860},
    head:770,dist:5.5,slope:0.140,cap:22.0},
+  {id:"MY011",name:"Baram Sarawak",cls:"AAA",cty:"MY",
+   u:{n:"Ulu Baram Upper",lat:3.455,lng:114.828,elev:950,area:1.12,bear:20,dlen:820},
+   l:{n:"Baram Valley Lower",lat:3.395,lng:114.862,elev:280,area:1.48,bear:200,dlen:950},
+   head:670,dist:8.8,slope:0.076,cap:22.5},
 
-  /* — Kenyir Lake Bluefield (lower = Kenyir Lake 145 m, existing) — */
-  /* KY001: ANU confirmed n05_e102_RES68377+RES_2011. 6 h base shown.
-     Full design: 692.7 GL / 150 GWh / 3 GW at 50 h, W/R 182.7 pair.  */
-  {id:"KY001",name:"Kenyir West (ANU confirmed)",cls:"AA",
+  /* ════ MALAYSIA — Kenyir Bluefield (lower = Kenyir Lake 145 m) ════ */
+  /* KY001 ANU-confirmed n05_e102_RES68377+RES_2011, AA, head 107 m,
+     692.7 GL / 150 GWh at 50 h, W/R pair 182.7. Slider base = 6 h.   */
+  {id:"KY001",name:"Kenyir West",cls:"AA",cty:"MY",
    u:{n:"RES68377 Upper",lat:5.111,lng:102.610,elev:252,area:4.2,bear:285,dlen:1180},
-   l:{n:"Kenyir Lake",lat:5.110,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   l:{n:"Kenyir Lake",lat:5.110,lng:102.632,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:107,dist:1.0,slope:0.107,cap:18.2,anuWR:182.7,anuGWh:150,anuH:50},
-  /* KY002-KY004: estimated per ANU Bluefield methodology, Kenyir vicinity */
-  {id:"KY002",name:"Kenyir North-West",cls:"AAA",
-   u:{n:"Gunung Stong Foothills Upper",lat:5.188,lng:102.650,elev:270,area:3.6,bear:310,dlen:1050},
-   l:{n:"Kenyir Lake",lat:5.155,lng:102.685,elev:145,area:260,bear:0,dlen:0,fixed:true},
+  {id:"KY002",name:"Kenyir North-West",cls:"AAA",cty:"MY",
+   u:{n:"Stong Foothills Upper",lat:5.188,lng:102.650,elev:270,area:3.6,bear:310,dlen:1050},
+   l:{n:"Kenyir Lake",lat:5.155,lng:102.685,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:125,dist:2.5,slope:0.050,cap:21.5},
-  {id:"KY003",name:"Kenyir South-West",cls:"AA",
+  {id:"KY003",name:"Kenyir South-West",cls:"AA",cty:"MY",
    u:{n:"Tembat Highland Upper",lat:4.935,lng:102.562,elev:248,area:3.2,bear:250,dlen:980},
-   l:{n:"Kenyir Lake",lat:4.948,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   l:{n:"Kenyir Lake",lat:4.948,lng:102.632,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:103,dist:1.8,slope:0.057,cap:15.8},
-  {id:"KY004",name:"Kenyir South",cls:"A",
+  {id:"KY004",name:"Kenyir South",cls:"A",cty:"MY",
    u:{n:"Menerong Upper",lat:4.825,lng:102.842,elev:235,area:2.8,bear:130,dlen:890},
-   l:{n:"Kenyir Lake",lat:4.862,lng:102.822,elev:145,area:260,bear:0,dlen:0,fixed:true},
-   head:90,dist:3.2,slope:0.028,cap:10.5}
+   l:{n:"Kenyir Lake",lat:4.862,lng:102.822,elev:145,area:260,dlen:0,fixed:"kenyir"},
+   head:90,dist:3.2,slope:0.028,cap:10.5},
+
+  /* ════ MALAYSIA — Bakun-Murum Bluefield (both existing, Sarawak) ════ */
+  /* ANU: 3 GW / 150 GWh at 50 h, head 300-338 m, 12 km aqueduct+3 km tunnel */
+  {id:"BM001",name:"Bakun–Murum",cls:"AAA",cty:"MY",
+   u:{n:"Murum Reservoir",lat:2.852,lng:114.448,elev:566,area:245,dlen:0,fixed:"murum"},
+   l:{n:"Bakun Reservoir",lat:2.752,lng:114.218,elev:228,area:695,dlen:0,fixed:"bakun"},
+   head:338,dist:30.5,slope:0.011,cap:18.0,anuGWh:150,anuH:50},
+
+  /* ════ ROMANIA — Carpathian Mountain sites ════ */
+  /* RO001: Tarnița-Lăpuștești — ACTUAL planned project, head 564 m.
+     Upper Lăpuștești new, lower Tarnița existing.  1 GW / 6 GWh base.  */
+  {id:"RO001",name:"Tarnița–Lăpuștești",cls:"AAA",cty:"RO",
+   u:{n:"Lăpuștești Upper",lat:46.720,lng:23.250,elev:1086,area:0.58,bear:15,dlen:520},
+   l:{n:"Tarnița Lake",lat:46.688,lng:23.268,elev:521,area:11,dlen:0,fixed:"tarnita"},
+   head:564,dist:3.5,slope:0.161,cap:6.0,anuGWh:50,anuH:50},
+  {id:"RO002",name:"Argeș–Vidraru",cls:"AAA",cty:"RO",
+   u:{n:"Căpățânii Upper",lat:45.412,lng:24.578,elev:1850,area:0.72,bear:25,dlen:580},
+   l:{n:"Vidraru Lake",lat:45.362,lng:24.612,elev:830,area:9,dlen:0,fixed:"vidraru"},
+   head:1020,dist:5.8,slope:0.176,cap:22.8},
+  {id:"RO003",name:"Jiu Valley",cls:"AAA",cty:"RO",
+   u:{n:"Parâng Upper",lat:45.322,lng:23.582,elev:1520,area:0.88,bear:350,dlen:680},
+   l:{n:"Jiu Valley Lower",lat:45.252,lng:23.542,elev:680,area:1.25,bear:170,dlen:810},
+   head:840,dist:9.2,slope:0.091,cap:22.8},
+  {id:"RO004",name:"Retezat Peaks",cls:"AAA",cty:"RO",
+   u:{n:"Retezat Upper",lat:45.382,lng:22.902,elev:2000,area:0.92,bear:330,dlen:650},
+   l:{n:"Retezat Valley Lower",lat:45.322,lng:22.852,elev:1100,area:1.28,bear:150,dlen:790},
+   head:900,dist:7.8,slope:0.115,cap:23.8},
+  {id:"RO005",name:"Bucegi–Sinaia",cls:"AA",cty:"RO",
+   u:{n:"Bucegi Plateau Upper",lat:45.382,lng:25.542,elev:1850,area:0.78,bear:40,dlen:610},
+   l:{n:"Prahova Valley Lower",lat:45.322,lng:25.482,elev:820,area:1.12,bear:220,dlen:740},
+   head:1030,dist:8.6,slope:0.120,cap:26.5},
+  {id:"RO006",name:"Bistrița Moldovei",cls:"AA",cty:"RO",
+   u:{n:"Ceahlău Upper",lat:47.122,lng:25.822,elev:1280,area:0.75,bear:5,dlen:600},
+   l:{n:"Bistrița Valley Lower",lat:47.052,lng:25.852,elev:560,area:1.08,bear:185,dlen:730},
+   head:720,dist:8.4,slope:0.086,cap:19.5},
+  {id:"RO007",name:"Argeș Highlands",cls:"A",cty:"RO",
+   u:{n:"Olt–Argeș Divide Upper",lat:45.522,lng:24.722,elev:1400,area:0.68,bear:350,dlen:560},
+   l:{n:"Argeș Valley Lower",lat:45.452,lng:24.682,elev:680,area:0.98,bear:170,dlen:690},
+   head:720,dist:8.8,slope:0.082,cap:18.2},
+  {id:"RO008",name:"Almăj–Banat",cls:"A",cty:"RO",
+   u:{n:"Almăj Upper",lat:44.882,lng:22.122,elev:820,area:0.62,bear:25,dlen:510},
+   l:{n:"Nera Valley Lower",lat:44.822,lng:22.082,elev:215,area:0.92,bear:205,dlen:640},
+   head:605,dist:8.2,slope:0.074,cap:15.5}
 ];
 
 /* ── Calculation helpers ──────────────────────────────────────────────── */
@@ -198,8 +281,8 @@ function rv(h,len){return 2*h*h*len/1e6;}
 function scaledArea(baseA,baseCap,cap){return baseA*Math.sqrt(cap/baseCap);}
 function metrics(s,cap){
   var v=vol(cap,s.head);
-  var aU=scaledArea(s.u.area,s.cap,cap);
-  var uh=dh(v,aU),ur=rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
+  var aU=s.u.fixed?s.u.area:scaledArea(s.u.area,s.cap,cap);
+  var uh=s.u.fixed?0:dh(v,aU),ur=s.u.fixed?0:rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
   var lh=0,lr=0,lwr=0;
   if(!s.l.fixed){var aL=scaledArea(s.l.area,s.cap,cap);lh=dh(v,aL);lr=rv(lh,s.l.dlen);lwr=lr>0?v/lr:999;}
   return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:uwr,lwr:lwr,
@@ -237,10 +320,10 @@ function valleyPoly(lat,lng,area,bear,seed){
 }
 /* Select polygon for reservoir r at current cap */
 function resPoly(r,s,cap,isUpper){
-  if(r.fixed)return KENYIR;
+  if(r.fixed)return FIXED_POLY[r.fixed]||KENYIR;
   var seed=SITES.indexOf(s)+(isUpper?0:5);
   var a=scaledArea(r.area,s.cap,cap);
-  if(r.bear!==undefined&&(r.fixed===undefined))return valleyPoly(r.lat,r.lng,a,r.bear,seed);
+  if(r.bear!==undefined)return valleyPoly(r.lat,r.lng,a,r.bear,seed);
   return roundPoly(r.lat,r.lng,a,seed);
 }
 
@@ -251,6 +334,7 @@ function lakeHTML(s,w,cap){
   cap=cap||s.cap;
   var r=s[w],v=vol(cap,s.head);
   var a=r.fixed?r.area:scaledArea(r.area,s.cap,cap);
+  var isFixed=!!r.fixed;
   var html="<div class='lh'><div class='lt2'>"+r.n+"</div>"+
     "<span class='lt'>"+(w==="u"?"&#9650; Upper":"&#9660; Lower")+" Reservoir</span></div>"+
     "<table class='it'>"+
@@ -259,9 +343,8 @@ function lakeHTML(s,w,cap){
     "<tr><td>Elevation</td><td>"+r.elev+" m</td></tr>"+
     "<tr><td>Water Area</td><td>"+a.toFixed(2)+" km&sup2;</td></tr>"+
     "<tr><td>Water Volume</td><td>"+v.toFixed(1)+" GL</td></tr>";
-  if(r.fixed){
-    html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>"+
-      "<tr><td>Original capacity</td><td>400 MW hydro</td></tr>";
+  if(isFixed){
+    html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>";
     if(s.anuWR)html+="<tr><td>ANU W/R (pair)</td><td>"+s.anuWR+"</td></tr>"+
       "<tr><td>ANU full design</td><td>"+s.anuGWh+" GWh / "+s.anuH+" h</td></tr>";
   }else{
@@ -321,12 +404,18 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
 var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
 var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
 
-/* Kenyir Lake background overlay — always visible as orientation reference */
-L.polygon(KENYIR,{color:"#1a6496",fillColor:"#1a6496",fillOpacity:.18,weight:1.5,
-  opacity:.7,interactive:false}).addTo(map);
-L.marker([5.05,102.75],{icon:L.divIcon({className:"",html:
-  "<div style='color:#4db8ff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px #000'>Kenyir Lake</div>",
-  iconAnchor:[30,-4]})}).addTo(map);
+/* ── Always-visible reference overlays ──────────────────────────────── */
+function refLabel(lat,lng,txt){
+  return L.marker([lat,lng],{icon:L.divIcon({className:"",html:
+    "<div style='color:#4db8ff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px #000'>"+txt+"</div>",
+    iconAnchor:[30,-4]}),interactive:false}).addTo(map);
+}
+function refPoly(pts,col){
+  L.polygon(pts,{color:col,fillColor:col,fillOpacity:.18,weight:1.5,opacity:.7,interactive:false}).addTo(map);
+}
+refPoly(KENYIR,"#1a6496"); refLabel(5.05,102.75,"Kenyir Lake");
+refPoly(BAKUN,"#1a6496");  refLabel(2.78,114.20,"Bakun Res.");
+refPoly(MURUM,"#1a6496");  refLabel(2.88,114.44,"Murum Res.");
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)
@@ -357,6 +446,7 @@ function buildDetail(s,i,capOvr){
   grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
   /* store refs for live polygon resize */
   grp._upLayer=up;grp._loLayer=lo;grp._pipeLayer=pipe;grp._cap=cap;
+  grp._uFixed=!!s.u.fixed;
   return grp;
 }
 
@@ -403,10 +493,12 @@ function build(){
   expanded=null;
   var mn=parseFloat(document.getElementById("minCap").value);
   var cf=document.getElementById("clsF").value;
+  var cn=document.getElementById("cntF").value;
   var cnt=0;
   SITES.forEach(function(s,i){
     if(s.cap<mn)return;
     if(cf!=="all"&&s.cls!==cf)return;
+    if(cn!=="all"&&s.cty!==cn)return;
     cnt++;
     var col=clsCol(s.cls);
     var midLat=(s.u.lat+s.l.lat)/2;
@@ -437,12 +529,12 @@ window.upd=function(id,val){
   var s=SITES.find(function(x){return x.id===id;});
   if(!s)return;
   var m=metrics(s,cap);
-  var lFixed=!!s.l.fixed;
+  var lFixed=!!s.l.fixed,uFixed=!!s.u.fixed;
   /* update table cells */
   document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
   document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
   document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
-  document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
+  if(!uFixed)document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
   if(!lFixed)document.getElementById("dl-"+id).textContent=m.lh.toFixed(0);
   document.getElementById("ru-"+id).textContent=m.ur.toFixed(2);
   if(!lFixed)document.getElementById("rl-"+id).textContent=m.lr.toFixed(2);
@@ -453,8 +545,10 @@ window.upd=function(id,val){
   /* live resize lake polygons */
   if(expanded===id&&detailCache[id]){
     var grp=detailCache[id];
-    grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
-    grp._upLayer.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+    if(!grp._uFixed){
+      grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
+      grp._upLayer.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+    }
     if(!lFixed){
       grp._loLayer.setLatLngs(resPoly(s.l,s,cap,false));
       grp._loLayer.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
@@ -466,6 +560,9 @@ window.upd=function(id,val){
 window.applyFilters=function(){
   var v=parseFloat(document.getElementById("minCap").value);
   document.getElementById("minCapD").textContent=v.toFixed(1)+" GWh";
+  var cn=document.getElementById("cntF").value;
+  if(cn==="RO")map.flyTo([45.8,24.5],7);
+  else if(cn==="MY")map.flyTo([4.2,109.5],6);
   build();
 };
 

@@ -95,6 +95,10 @@
         <option value="A">A &mdash; Viable</option>
       </select>
     </div>
+    <div class="fg">
+      <button onclick="map.flyTo([4.97,102.72],9)" style="background:#1a3a5c;border:1px solid #2a6496;color:#7fc4e8;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">&#128285; Kenyir</button>
+      <button onclick="map.flyTo([4.2,109.5],6)" style="background:#1a3a5c;border:1px solid #2a6496;color:#7fc4e8;border-radius:4px;padding:3px 10px;font-size:12px;cursor:pointer">&#127482;&#127486; All Malaysia</button>
+    </div>
   </div>
 </div>
 <div id="map"></div>
@@ -316,6 +320,13 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
 
 var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
 var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
+
+/* Kenyir Lake background overlay — always visible as orientation reference */
+L.polygon(KENYIR,{color:"#1a6496",fillColor:"#1a6496",fillOpacity:.18,weight:1.5,
+  opacity:.7,interactive:false}).addTo(map);
+L.marker([5.05,102.75],{icon:L.divIcon({className:"",html:
+  "<div style='color:#4db8ff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px #000'>Kenyir Lake</div>",
+  iconAnchor:[30,-4]})}).addTo(map);
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)

@@ -7,68 +7,63 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Segoe UI",Arial,sans-serif;background:#0d1b2a;color:#e8f4f8;overflow:hidden}
-    #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1b2a,#1a3a5c);border-bottom:2px solid #2a6496;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between}
+    body{font-family:"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a2b3c;overflow:hidden}
+    #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#ffffff,#ddeeff);border-bottom:2px solid #2a6496;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.12)}
     .h-left{display:flex;align-items:center;gap:12px}
-    .h-logo{width:36px;height:36px;background:#1a6eb5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-    .h-title{font-size:15px;font-weight:700;color:#7fc4e8;letter-spacing:.4px}
-    .h-sub{font-size:11px;color:#6c9ab5;margin-top:1px}
+    .h-logo{width:36px;height:36px;background:#2a6496;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .h-title{font-size:15px;font-weight:700;color:#1a4a7a;letter-spacing:.4px}
+    .h-sub{font-size:11px;color:#4a6a8a;margin-top:1px}
     .h-ctrl{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
-    .fg{display:flex;align-items:center;gap:6px;font-size:12px;color:#9ecde8;white-space:nowrap}
+    .fg{display:flex;align-items:center;gap:6px;font-size:12px;color:#2a5070;white-space:nowrap}
     .fg input[type=range]{width:110px;accent-color:#2a6496;cursor:pointer}
-    .fg select{background:#1a3a5c;border:1px solid #2a6496;border-radius:4px;color:#e8f4f8;padding:3px 7px;font-size:12px;cursor:pointer}
-    .capd{color:#7fc4e8;font-weight:600;min-width:58px;font-size:12px}
+    .fg select{background:#fff;border:1px solid #2a6496;border-radius:4px;color:#1a2b3c;padding:3px 7px;font-size:12px;cursor:pointer}
+    .capd{color:#1a4a7a;font-weight:600;min-width:58px;font-size:12px}
     #map{position:fixed;top:58px;left:0;right:0;bottom:28px}
-    #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#0a1520;border-top:1px solid #1a3a5c;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#6c9ab5;z-index:999}
-    #foot span{color:#7fc4e8;font-weight:600}
-    /* Info panel shown when a pair is expanded */
-    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#cde;display:none;max-width:230px}
-    #infopanel .ip-name{font-size:13px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
-    #infopanel .ip-hint{font-size:11px;color:#6c9ab5;margin-top:5px;line-height:1.4}
-    #infopanel .ip-close{float:right;cursor:pointer;color:#e74c3c;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
-    /* Popups */
-    .leaflet-popup-content-wrapper{background:rgba(10,21,32,.97)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#e8f4f8!important;box-shadow:0 4px 24px rgba(0,100,200,.35)!important}
-    .leaflet-popup-tip{background:rgba(10,21,32,.97)!important}
+    #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#ddeeff;border-top:1px solid #aac4e0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#4a6a8a;z-index:999}
+    #foot span{color:#1a4a7a;font-weight:600}
+    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(255,255,255,.97);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#1a2b3c;display:none;max-width:230px;box-shadow:0 3px 14px rgba(0,80,160,.18)}
+    #infopanel .ip-name{font-size:13px;font-weight:700;color:#1a4a7a;margin-bottom:4px}
+    #infopanel .ip-hint{font-size:11px;color:#4a6a8a;margin-top:5px;line-height:1.4}
+    #infopanel .ip-close{float:right;cursor:pointer;color:#c0392b;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
+    .leaflet-popup-content-wrapper{background:rgba(255,255,255,.98)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#1a2b3c!important;box-shadow:0 4px 24px rgba(0,80,160,.22)!important}
+    .leaflet-popup-tip{background:rgba(255,255,255,.98)!important}
     .leaflet-popup-content{margin:14px!important;min-width:270px}
-    /* Tooltip */
-    .hb-tip{background:rgba(10,21,32,.95)!important;border:1px solid #2a6496!important;color:#e8f4f8!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,100,200,.3)!important;padding:6px 10px!important}
+    .hb-tip{background:rgba(255,255,255,.97)!important;border:1px solid #2a6496!important;color:#1a2b3c!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,80,160,.18)!important;padding:6px 10px!important}
     .hb-tip::before{display:none}
-    /* Popup content styles */
-    .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #1a3a5c;padding-bottom:8px}
-    .ph h3{font-size:14px;color:#7fc4e8;flex:1;margin:0}
+    .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #ccdaee;padding-bottom:8px}
+    .ph h3{font-size:14px;color:#1a4a7a;flex:1;margin:0}
     .cb{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.4px}
-    .cb.aaa{background:#b8860b;color:#fff8dc}
-    .cb.aa{background:#c0392b;color:#ffe0e0}
-    .cb.a{background:#1a6b3a;color:#ccffcc}
-    .lt{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a3a5c;color:#7fc4e8;border:1px solid #2a6496;white-space:nowrap}
+    .cb.aaa{background:#e8a000;color:#fff}
+    .cb.aa{background:#c0392b;color:#fff}
+    .cb.a{background:#1a7a3a;color:#fff}
+    .lt{font-size:10px;padding:2px 8px;border-radius:10px;background:#ddeeff;color:#1a4a7a;border:1px solid #aac4e0;white-space:nowrap}
     .it{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
-    .it td{padding:3px 6px;border-bottom:1px solid #0f2030}
-    .it td:first-child{color:#9ecde8;width:58%}
-    .it td:last-child{font-weight:600}
-    .cs{margin:10px 0;padding:8px 10px;background:#060f18;border-radius:6px;border:1px solid #1a3a5c}
-    .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#9ecde8}
-    .cv{color:#7fc4e8;font-weight:700;font-size:14px}
+    .it td{padding:3px 6px;border-bottom:1px solid #e0eaf4}
+    .it td:first-child{color:#4a6a8a;width:58%}
+    .it td:last-child{font-weight:600;color:#1a2b3c}
+    .cs{margin:10px 0;padding:8px 10px;background:#f0f6ff;border-radius:6px;border:1px solid #ccdaee}
+    .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#4a6a8a}
+    .cv{color:#1a4a7a;font-weight:700;font-size:14px}
     .csl{width:100%;accent-color:#2a6496;cursor:pointer}
     .ct{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
-    .ct th{background:#1a3a5c;color:#7fc4e8;padding:4px 6px;font-size:11px;text-align:center}
+    .ct th{background:#ddeeff;color:#1a4a7a;padding:4px 6px;font-size:11px;text-align:center}
     .ct th:first-child{text-align:left}
-    .ct td{padding:3px 6px;border-bottom:1px solid #060f18;text-align:center}
-    .ct td:first-child{color:#9ecde8;text-align:left}
-    .ct tr:hover td{background:#1a2535}
+    .ct td{padding:3px 6px;border-bottom:1px solid #eef2f7;text-align:center;color:#1a2b3c}
+    .ct td:first-child{color:#4a6a8a;text-align:left}
+    .ct tr:hover td{background:#e8f0f8}
     .os{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-    .or{background:#060f18;border-radius:5px;padding:5px 8px;text-align:center;border:1px solid #1a3a5c}
-    .or span{display:block;font-size:10px;color:#9ecde8;margin-bottom:2px}
-    .or strong{font-size:13px;color:#7fc4e8}
+    .or{background:#f0f6ff;border-radius:5px;padding:5px 8px;text-align:center;border:1px solid #ccdaee}
+    .or span{display:block;font-size:10px;color:#4a6a8a;margin-bottom:2px}
+    .or strong{font-size:13px;color:#1a4a7a}
     .or.full{grid-column:1/-1}
     .lh{margin-bottom:8px}
-    .lt2{font-size:14px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
-    .legend{background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:12px;font-size:12px;color:#cde}
-    .legend h4{font-size:12px;color:#7fc4e8;margin-bottom:7px;border-bottom:1px solid #1a3a5c;padding-bottom:4px;letter-spacing:.3px}
+    .lt2{font-size:14px;font-weight:700;color:#1a4a7a;margin-bottom:4px}
+    .legend{background:rgba(255,255,255,.95);border:1px solid #aac4e0;border-radius:8px;padding:12px;font-size:12px;color:#1a2b3c;box-shadow:0 2px 8px rgba(0,80,160,.12)}
+    .legend h4{font-size:12px;color:#1a4a7a;margin-bottom:7px;border-bottom:1px solid #ccdaee;padding-bottom:4px;letter-spacing:.3px}
     .li{display:flex;align-items:center;gap:8px;margin-bottom:5px}
     .ls{width:15px;height:15px;border-radius:3px;flex-shrink:0}
     .lc{width:15px;height:15px;border-radius:50%;flex-shrink:0}
     .lp{width:22px;height:0;border-top:3px dashed;flex-shrink:0}
-    /* Expanded dot pulse ring */
     @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
     .dot-pulse{animation:pulse 1.5s ease-out infinite}
   </style>
@@ -398,24 +393,27 @@ function pipeHTML(s,capOvr){
 
 /* ── Map ─────────────────────────────────────────────────────────────── */
 var map=L.map("map",{center:[4.2,109.5],zoom:6});
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-  {attribution:"&copy; OSM &copy; CartoDB",maxZoom:19}).addTo(map);
+/* CartoDB Voyager — light, shows real water bodies + terrain in colour */
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  {attribution:"&copy; OpenStreetMap contributors &copy; CartoDB",maxZoom:19}).addTo(map);
 
-var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
+var pipeLayer=L.featureGroup().addTo(map);   // always-visible pipeline paths
+var dotLayer=L.featureGroup().addTo(map);    // always-visible dot markers
 var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
+var pipeCache={};                            // site.id -> background pipeline polyline
 
 /* ── Always-visible reference overlays ──────────────────────────────── */
 function refLabel(lat,lng,txt){
-  return L.marker([lat,lng],{icon:L.divIcon({className:"",html:
-    "<div style='color:#4db8ff;font-size:10px;font-weight:600;white-space:nowrap;text-shadow:0 1px 3px #000'>"+txt+"</div>",
+  L.marker([lat,lng],{icon:L.divIcon({className:"",html:
+    "<div style='color:#1a4a7a;font-size:10px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.75);padding:1px 4px;border-radius:3px;border:1px solid #aac4e0'>"+txt+"</div>",
     iconAnchor:[30,-4]}),interactive:false}).addTo(map);
 }
-function refPoly(pts,col){
-  L.polygon(pts,{color:col,fillColor:col,fillOpacity:.18,weight:1.5,opacity:.7,interactive:false}).addTo(map);
+function refPoly(pts){
+  L.polygon(pts,{color:"#2a6496",fillColor:"#5ab0e8",fillOpacity:.22,weight:1.8,opacity:.7,interactive:false}).addTo(map);
 }
-refPoly(KENYIR,"#1a6496"); refLabel(5.05,102.75,"Kenyir Lake");
-refPoly(BAKUN,"#1a6496");  refLabel(2.78,114.20,"Bakun Res.");
-refPoly(MURUM,"#1a6496");  refLabel(2.88,114.44,"Murum Res.");
+refPoly(KENYIR); refLabel(5.05,102.75,"Kenyir Lake");
+refPoly(BAKUN);  refLabel(2.78,114.20,"Bakun Res.");
+refPoly(MURUM);  refLabel(2.88,114.44,"Murum Res.");
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)
@@ -428,10 +426,10 @@ function buildDetail(s,i,capOvr){
   var col=clsCol(s.cls);
   var grp=L.featureGroup();
   var up=L.polygon(resPoly(s.u,s,cap,true),
-    {color:col,fillColor:"#4db8ff",fillOpacity:.6,weight:2,opacity:.95});
+    {color:col,fillColor:"#2980b9",fillOpacity:.55,weight:2.5,opacity:1});
   up.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
   var lo=L.polygon(resPoly(s.l,s,cap,false),
-    {color:col,fillColor:"#80d4ff",fillOpacity:.45,weight:2,opacity:.95});
+    {color:col,fillColor:"#5dade2",fillOpacity:.40,weight:2.5,opacity:1});
   lo.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
   var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
     {color:col,weight:3,dashArray:"8 5",opacity:.95});
@@ -440,7 +438,7 @@ function buildDetail(s,i,capOvr){
     lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
     lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
   }
-  hov(up,.88,.60);hov(lo,.75,.45);
+  hov(up,.82,.55);hov(lo,.70,.40);
   pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
   pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
   grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
@@ -458,7 +456,9 @@ window.collapse=function(){
   map.closePopup();
   /* restore dot appearance */
   var dot=dotCache[expanded];
-  if(dot){var col=clsCol(dot._site.cls);dot.setStyle({radius:dot._r,fillOpacity:.75,weight:2,color:col,fillColor:col});}
+  if(dot){dot.setStyle({radius:dot._r,fillOpacity:.9,weight:2,color:"#fff",fillColor:clsCol(dot._site.cls)});}
+  var bgPl=pipeCache[expanded];
+  if(bgPl)bgPl.setStyle({weight:2.5,opacity:0.72,dashArray:"7 5"});
   document.getElementById("infopanel").style.display="none";
   expanded=null;
 };
@@ -485,9 +485,11 @@ function expand(s,i){
     /* Greenfield: fit the polygons + pipeline, zoom limit 14            */
     map.fitBounds(detailCache[s.id].getBounds().pad(0.6),{maxZoom:14,animate:true});
   }
-  /* highlight the dot */
+  /* highlight dot + thicken background pipeline */
   var dot=dotCache[s.id];
-  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:3,color:"#fff",fillColor:clsCol(s.cls)});
+  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:2.5,color:"#fff",fillColor:clsCol(s.cls)});
+  var bgPl=pipeCache[s.id];
+  if(bgPl)bgPl.setStyle({weight:5,opacity:1,dashArray:"8 4"});
   /* show info panel */
   var ip=document.getElementById("infopanel");
   document.getElementById("ip-name").textContent=s.name;
@@ -497,11 +499,12 @@ function expand(s,i){
   ip.style.display="block";
 }
 
-/* Build / rebuild all dot markers */
+/* Build / rebuild all dot markers + always-visible pipeline paths */
 function build(){
+  pipeLayer.clearLayers();
   dotLayer.clearLayers();
   detailLayer.clearLayers();
-  detailCache={};dotCache={};
+  detailCache={};dotCache={};pipeCache={};
   if(expanded)document.getElementById("infopanel").style.display="none";
   expanded=null;
   var mn=parseFloat(document.getElementById("minCap").value);
@@ -516,9 +519,21 @@ function build(){
     var col=clsCol(s.cls);
     var midLat=(s.u.lat+s.l.lat)/2;
     var midLng=(s.u.lng+s.l.lng)/2;
-    var r=Math.max(9,Math.min(20,8+Math.sqrt(s.cap)*1.8));
+
+    /* ── Always-visible pipeline path ── */
+    var pl=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
+      {color:col,weight:2.5,dashArray:"7 5",opacity:0.72});
+    pl._site=s;pl._i=i;
+    pl.bindTooltip("<b>"+s.name+"</b> pipeline &bull; "+s.dist+" km &bull; "+s.head+" m head",
+      {className:"hb-tip",sticky:true});
+    pl.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
+    pipeLayer.addLayer(pl);
+    pipeCache[s.id]=pl;
+
+    /* ── Dot marker ── */
+    var r=Math.max(8,Math.min(18,7+Math.sqrt(s.cap)*1.6));
     var dot=L.circleMarker([midLat,midLng],
-      {radius:r,color:col,fillColor:col,fillOpacity:.75,weight:2,opacity:.9});
+      {radius:r,color:"#fff",fillColor:col,fillOpacity:.9,weight:2,opacity:1});
     dot._site=s;dot._r=r;
     dot.bindTooltip(
       "<b>"+s.name+"</b><br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
@@ -589,8 +604,8 @@ leg.onAdd=function(){
     "<div class='li'><div class='lc' style='background:#e74c3c'></div><span>AA &mdash; High value</span></div>"+
     "<div class='li'><div class='lc' style='background:#27ae60'></div><span>A &mdash; Viable</span></div>"+
     "<h4 style='margin-top:9px'>WHEN EXPANDED</h4>"+
-    "<div class='li'><div class='ls' style='background:#4db8ff88;border:2px solid #aaa'></div><span>Upper reservoir</span></div>"+
-    "<div class='li'><div class='ls' style='background:#80d4ff66;border:2px solid #aaa'></div><span>Lower reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#2980b9aa;border:2px solid #1a5a8a'></div><span>Upper reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#5dade288;border:2px solid #2a7ab0'></div><span>Lower reservoir</span></div>"+
     "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel</span></div>"+
     "<div style='margin-top:8px;font-size:10px;color:#6c9ab5;border-top:1px solid #1a3a5c;padding-top:6px'>"+
     "Dot size &prop; storage capacity<br>Click dot &rarr; expand pair<br>Click map &rarr; collapse</div>";

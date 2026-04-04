@@ -471,7 +471,20 @@ function expand(s,i){
   detailLayer.addLayer(detailCache[s.id]);
   expanded=s.id;
   /* zoom to the pair */
-  map.fitBounds(detailCache[s.id].getBounds().pad(0.7),{maxZoom:13,animate:true});
+  /* Smart zoom: fixed-lake sites have huge existing polygons that would
+     zoom the map OUT instead of in.  Use targeted flyTo instead.         */
+  if(s.l.fixed&&!s.u.fixed){
+    /* Kenyir-style Bluefield: zoom to upper reservoir + tunnel entry    */
+    var midLat=(s.u.lat+s.l.lat)/2,midLng=(s.u.lng+s.l.lng)/2;
+    map.flyTo([midLat,midLng],13,{animate:true,duration:1.0});
+  }else if(s.u.fixed&&s.l.fixed){
+    /* Both existing (Bakun-Murum): fit between the two lake centroids   */
+    map.fitBounds(L.latLngBounds([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]]).pad(0.3),
+      {maxZoom:10,animate:true});
+  }else{
+    /* Greenfield: fit the polygons + pipeline, zoom limit 14            */
+    map.fitBounds(detailCache[s.id].getBounds().pad(0.6),{maxZoom:14,animate:true});
+  }
   /* highlight the dot */
   var dot=dotCache[s.id];
   if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:3,color:"#fff",fillColor:clsCol(s.cls)});

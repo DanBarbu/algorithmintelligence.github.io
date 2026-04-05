@@ -136,15 +136,22 @@ var MURUM=[
   [2.882,114.362],[2.812,114.348],[2.748,114.378],[2.762,114.432],
   [2.818,114.472],[2.852,114.448]
 ];
-/* Tarnița Lake, Cluj RO — 521 m, ~11 km² (lower reservoir for RO001) */
+/* Tarnița Lake (Lacul Tarnița/Gilău), Cluj RO — 420 m, ~2.69 km²
+   ANU id: n46_e023_RES23783, centroid 46.7331°N 23.3547°E
+   Elongated SW→NE along Someș Cald valley, bearing ~78°, ~10 km long × ~370 m wide */
 var TARNITA=[
-  [46.682,23.258],[46.688,23.272],[46.695,23.284],[46.700,23.278],
-  [46.698,23.262],[46.692,23.252],[46.685,23.250],[46.682,23.258]
+  [46.7246,23.2892],[46.7282,23.3150],[46.7337,23.3538],
+  [46.7389,23.3926],[46.7425,23.4198],[46.7413,23.4202],
+  [46.7371,23.3932],[46.7311,23.3546],[46.7252,23.3160],
+  [46.7214,23.2902],[46.7246,23.2892]
 ];
-/* Vidraru Lake, Argeș RO — 830 m, ~9 km² (lower for RO002 Bluefield) */
+/* Vidraru Lake, Argeș RO — 830 m, ~8.93 km²
+   Elongated S→NNW along Argeș River gorge, bearing ~350°, ~12.4 km long × ~720 m wide */
 var VIDRARU=[
-  [45.352,24.612],[45.362,24.626],[45.372,24.620],[45.370,24.604],
-  [45.360,24.596],[45.350,24.600],[45.352,24.612]
+  [45.3445,24.6209],[45.3716,24.6152],[45.3977,24.6088],
+  [45.4246,24.6009],[45.4543,24.5916],[45.4537,24.5864],
+  [45.4234,24.5911],[45.3963,24.5972],[45.3704,24.6048],
+  [45.3435,24.6131],[45.3445,24.6209]
 ];
 /* Lookup map for fixed polygon keys */
 var FIXED_POLY={kenyir:KENYIR,bakun:BAKUN,murum:MURUM,tarnita:TARNITA,vidraru:VIDRARU};
@@ -232,12 +239,13 @@ var SITES=[
    head:338,dist:30.5,slope:0.011,cap:18.0,anuGWh:150,anuH:50},
 
   /* ════ ROMANIA — Carpathian Mountain sites ════ */
-  /* RO001: Tarnița-Lăpuștești — ACTUAL planned project, head 564 m.
-     Upper Lăpuștești new, lower Tarnița existing.  1 GW / 6 GWh base.  */
-  {id:"RO001",name:"Tarnița–Lăpuștești",cls:"AAA",cty:"RO",
-   u:{n:"Lăpuștești Upper",lat:46.720,lng:23.250,elev:1086,area:0.58,bear:15,dlen:520},
-   l:{n:"Tarnița Lake",lat:46.688,lng:23.268,elev:521,area:11,dlen:0,fixed:"tarnita"},
-   head:564,dist:3.5,slope:0.161,cap:6.0,anuGWh:50,anuH:50},
+  /* RO001: Tarnița Bluefield — ANU site RES_143844 & n46_e023_RES23783.
+     ANU Class C, head 100 m, sep 0.2 km, W/R 32.1.
+     Full design: 15 GWh / 18 h / 833 MW.  Upper (RES_143844) new; lower = Tarnița Lake. */
+  {id:"RO001",name:"Tarnița–Lăpuștești",cls:"AA",cty:"RO",
+   u:{n:"RES_143844 Upper",lat:46.7217,lng:23.2786,elev:520,area:1.36,bear:258,dlen:354},
+   l:{n:"Tarnița Lake",lat:46.7331,lng:23.3547,elev:420,area:2.69,dlen:0,fixed:"tarnita"},
+   head:100,dist:0.2,slope:0.48,cap:5.0,anuGWh:15,anuH:18,anuWR:32.1},
   {id:"RO002",name:"Argeș–Vidraru",cls:"AAA",cty:"RO",
    u:{n:"Căpățânii Upper",lat:45.412,lng:24.578,elev:1850,area:0.72,bear:25,dlen:580},
    l:{n:"Vidraru Lake",lat:45.362,lng:24.612,elev:830,area:9,dlen:0,fixed:"vidraru"},
@@ -411,9 +419,11 @@ function refLabel(lat,lng,txt){
 function refPoly(pts){
   L.polygon(pts,{color:"#2a6496",fillColor:"#5ab0e8",fillOpacity:.22,weight:1.8,opacity:.7,interactive:false}).addTo(map);
 }
-refPoly(KENYIR); refLabel(5.05,102.75,"Kenyir Lake");
-refPoly(BAKUN);  refLabel(2.78,114.20,"Bakun Res.");
-refPoly(MURUM);  refLabel(2.88,114.44,"Murum Res.");
+refPoly(KENYIR);  refLabel(5.05,102.75,"Kenyir Lake");
+refPoly(BAKUN);   refLabel(2.78,114.20,"Bakun Res.");
+refPoly(MURUM);   refLabel(2.88,114.44,"Murum Res.");
+refPoly(TARNITA); refLabel(46.7342,23.354,"Tarnița Lake");
+refPoly(VIDRARU); refLabel(45.400,24.603,"Vidraru Lake");
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)

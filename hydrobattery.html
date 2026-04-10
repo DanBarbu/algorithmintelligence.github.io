@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Malaysia Hydrobattery Atlas — ANU PHES</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a2b3c;overflow:hidden}
@@ -64,6 +65,17 @@
     .ls{width:15px;height:15px;border-radius:3px;flex-shrink:0}
     .lc{width:15px;height:15px;border-radius:50%;flex-shrink:0}
     .lp{width:22px;height:0;border-top:3px dashed;flex-shrink:0}
+    .anu-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;background:#1a6496;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;border:none;cursor:pointer;letter-spacing:.3px}
+    .anu-btn:hover{background:#2a80bf;color:#fff}
+    .anu-hdr-btn{background:#1a6496;color:#fff;border:none;border-radius:5px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .anu-hdr-btn:hover{background:#2a80bf}
+    #anu-panel{position:fixed;top:58px;right:0;width:480px;bottom:28px;z-index:800;background:#111;border-left:3px solid #2a6496;display:none;flex-direction:column}
+    #anu-panel iframe{flex:1;border:none;width:100%;height:100%}
+    #anu-panel .anu-fb{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#aaa;font-size:13px;padding:20px;text-align:center}
+    #anu-panel .anu-fb a{color:#5ab0e8}
+    #anu-resize{position:fixed;top:58px;right:480px;width:6px;bottom:28px;background:#2a6496;cursor:ew-resize;z-index:801;display:none}
+    .leaflet-control-geocoder{border:1px solid #2a6496!important;border-radius:6px!important;box-shadow:0 2px 8px rgba(0,80,160,.18)!important}
+    .leaflet-control-geocoder-form input{font-size:12px!important}
     @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
     .dot-pulse{animation:pulse 1.5s ease-out infinite}
   </style>
@@ -97,7 +109,18 @@
         <option value="RO">Romania</option>
       </select>
     </div>
+    <button class="anu-hdr-btn" onclick="toggleANU()" title="Open ANU PHES Atlas side-by-side">&#127760; ANU Atlas</button>
   </div>
+</div>
+<div id="anu-resize"></div>
+<div id="anu-panel">
+  <div class="anu-fb" id="anu-fb">
+    <div style="font-size:24px">&#127760;</div>
+    <div>Loading ANU RE100 PHES Atlas…</div>
+    <div style="font-size:11px">If the atlas does not appear, it may block embedding.</div>
+    <a id="anu-ext" href="https://re100.anu.edu.au/" target="_blank">&#x2197; Open ANU Atlas in new tab</a>
+  </div>
+  <iframe id="anu-iframe" src="about:blank" allowfullscreen></iframe>
 </div>
 <div id="map"></div>
 <div id="infopanel">
@@ -404,7 +427,8 @@ function pipeHTML(s,capOvr){
       "<div class='or'><span>Power Output</span><strong id='pw-"+s.id+"'>"+m.pw.toFixed(0)+" MW</strong></div>"+
       "<div class='or'><span>Round-trip Efficiency</span><strong>75 %</strong></div>"+
       "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
-    "</div>";
+    "</div>"+
+    "<a class='anu-btn' href='"+anuUrl(s)+"' target='_blank' onclick='openANU(\""+s.id+"\");return false;'>&#127760; View in ANU PHES Atlas at this location</a>";
 }
 
 /* ── Map ─────────────────────────────────────────────────────────────── */
@@ -417,6 +441,50 @@ var pipeLayer=L.featureGroup().addTo(map);   // always-visible pipeline paths
 var dotLayer=L.featureGroup().addTo(map);    // always-visible dot markers
 var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
 var pipeCache={};                            // site.id -> background pipeline polyline
+
+/* ── ANU Atlas integration ───────────────────────────────────────────── */
+/* Build TerriaJS URL to open ANU at the PHES pair location              */
+function anuUrl(s){
+  var lat=(s.u.lat+s.l.lat)/2,lng=(s.u.lng+s.l.lng)/2;
+  var pad=0.06;
+  /* TerriaJS camera rectangle + Bluefield layer enabled */
+  var state={"version":"8.0.0",
+    "camera":{"west":lng-pad,"south":lat-pad*0.7,"east":lng+pad,"north":lat+pad*0.7},
+    "initSources":[{"stratum":"user","models":{
+      "https://storage.googleapis.com/recast-api-prod-bucket/api/v2/phes_atlas/global_bluefield_15GWh_18h.json":
+        {"type":"geojson","isEnabled":true,"isShown":true}
+    }}]};
+  return "https://re100.anu.edu.au/#start="+encodeURIComponent(JSON.stringify(state));
+}
+/* Open ANU side-panel at specific site location */
+window.openANU=function(id){
+  var s=SITES.find(function(x){return x.id===id;});
+  if(!s)return;
+  var panel=document.getElementById("anu-panel");
+  var iframe=document.getElementById("anu-iframe");
+  var resize=document.getElementById("anu-resize");
+  panel.style.display="flex";resize.style.display="block";
+  iframe.src=anuUrl(s);
+  document.getElementById("anu-ext").href=anuUrl(s);
+  /* shrink map */
+  document.getElementById("map").style.right="480px";
+  setTimeout(function(){map.invalidateSize();},320);
+};
+window.toggleANU=function(){
+  var panel=document.getElementById("anu-panel");
+  var resize=document.getElementById("anu-resize");
+  var open=panel.style.display==="flex";
+  if(open){
+    panel.style.display="none";resize.style.display="none";
+    document.getElementById("map").style.right="0";
+  }else{
+    panel.style.display="flex";resize.style.display="block";
+    document.getElementById("map").style.right="480px";
+    document.getElementById("anu-iframe").src=
+      "https://re100.anu.edu.au/#start="+encodeURIComponent(JSON.stringify({"version":"8.0.0"}));
+  }
+  setTimeout(function(){map.invalidateSize();},320);
+};
 
 /* ── Always-visible reference overlays ──────────────────────────────── */
 function refLabel(lat,lng,txt){
@@ -492,9 +560,8 @@ function expand(s,i){
   /* Smart zoom: fixed-lake sites have huge existing polygons that would
      zoom the map OUT instead of in.  Use targeted flyTo instead.         */
   if(s.l.fixed&&!s.u.fixed){
-    /* Kenyir-style Bluefield: zoom to upper reservoir + tunnel entry    */
-    var midLat=(s.u.lat+s.l.lat)/2,midLng=(s.u.lng+s.l.lng)/2;
-    map.flyTo([midLat,midLng],13,{animate:true,duration:1.0});
+    /* Bluefield: fitBounds on the full detail group (both polygons + pipe) */
+    map.fitBounds(detailCache[s.id].getBounds().pad(0.4),{maxZoom:13,animate:true});
   }else if(s.u.fixed&&s.l.fixed){
     /* Both existing (Bakun-Murum): fit between the two lake centroids   */
     map.fitBounds(L.latLngBounds([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]]).pad(0.3),
@@ -630,6 +697,18 @@ leg.onAdd=function(){
   return d;
 };
 leg.addTo(map);
+
+/* ── Geocoder search (Nominatim / OpenStreetMap) ─────────────────────── */
+L.Control.geocoder({
+  defaultMarkGeocode:false,
+  placeholder:"Search location…",
+  collapsed:false,
+  position:"topleft",
+  geocoder:L.Control.Geocoder.nominatim({geocodingQueryParams:{limit:5}})
+}).on("markgeocode",function(e){
+  map.fitBounds(e.geocode.bbox,{maxZoom:14,animate:true});
+}).addTo(map);
 </script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 </body>
 </html>

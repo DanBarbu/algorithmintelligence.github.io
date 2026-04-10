@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Malaysia Hydrobattery Atlas — ANU PHES</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:"Segoe UI",Arial,sans-serif;background:#0d1b2a;color:#e8f4f8;overflow:hidden}
@@ -109,6 +110,7 @@
   <div><span id="cnt">12</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script>
 /* ── Kenyir Lake polygon (145 m water level, Terengganu) ────────────────
    Simplified boundary matching known reservoir outline ~260 km²           */
@@ -476,6 +478,17 @@ leg.onAdd=function(){
   return d;
 };
 leg.addTo(map);
+
+/* ── Geocoder search (Nominatim / OpenStreetMap) ─────────────────────── */
+L.Control.geocoder({
+  defaultMarkGeocode:false,
+  placeholder:"Search location…",
+  collapsed:false,
+  position:"topleft",
+  geocoder:L.Control.Geocoder.nominatim({geocodingQueryParams:{limit:5}})
+}).on("markgeocode",function(e){
+  map.fitBounds(e.geocode.bbox,{maxZoom:14,animate:true});
+}).addTo(map);
 </script>
 </body>
 </html>

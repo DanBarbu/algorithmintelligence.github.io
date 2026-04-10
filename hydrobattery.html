@@ -138,20 +138,28 @@ var MURUM=[
 ];
 /* Tarnița Lake (Lacul Tarnița/Gilău), Cluj RO — 420 m, ~2.69 km²
    ANU id: n46_e023_RES23783, centroid 46.7331°N 23.3547°E
-   Elongated SW→NE along Someș Cald valley, bearing ~78°, ~10 km long × ~370 m wide */
+   Compact irregular N–S elongated shape following Someș Cald valley */
 var TARNITA=[
-  [46.7246,23.2892],[46.7282,23.3150],[46.7337,23.3538],
-  [46.7389,23.3926],[46.7425,23.4198],[46.7413,23.4202],
-  [46.7371,23.3932],[46.7311,23.3546],[46.7252,23.3160],
-  [46.7214,23.2902],[46.7246,23.2892]
+  [46.7222,23.3402],[46.7229,23.3419],[46.7252,23.3446],
+  [46.7279,23.3472],[46.7296,23.3494],[46.7314,23.3522],
+  [46.7334,23.3559],[46.7346,23.3592],[46.7362,23.3614],
+  [46.7379,23.3639],[46.7396,23.3662],[46.7414,23.3676],
+  [46.7432,23.3692],[46.7439,23.3682],[46.7422,23.3664],
+  [46.7402,23.3644],[46.7379,23.3622],[46.7359,23.3599],
+  [46.7332,23.3564],[46.7309,23.3532],[46.7286,23.3504],
+  [46.7262,23.3476],[46.7229,23.3442],[46.7222,23.3402]
 ];
 /* Vidraru Lake, Argeș RO — 830 m, ~8.93 km²
-   Elongated S→NNW along Argeș River gorge, bearing ~350°, ~12.4 km long × ~720 m wide */
+   ANU id: lower for RO002; dendritic reservoir on Argeș + Capra rivers */
 var VIDRARU=[
-  [45.3445,24.6209],[45.3716,24.6152],[45.3977,24.6088],
-  [45.4246,24.6009],[45.4543,24.5916],[45.4537,24.5864],
-  [45.4234,24.5911],[45.3963,24.5972],[45.3704,24.6048],
-  [45.3435,24.6131],[45.3445,24.6209]
+  [45.3525,24.6382],[45.3538,24.6390],[45.3562,24.6368],
+  [45.3590,24.6342],[45.3618,24.6308],[45.3652,24.6275],
+  [45.3688,24.6248],[45.3720,24.6215],[45.3762,24.6182],
+  [45.3830,24.6118],[45.3905,24.6058],[45.3960,24.5988],
+  [45.3942,24.5962],[45.3875,24.6028],[45.3808,24.6088],
+  [45.3748,24.6155],[45.3698,24.6192],[45.3655,24.6232],
+  [45.3612,24.6272],[45.3572,24.6318],[45.3540,24.6355],
+  [45.3525,24.6382]
 ];
 /* Lookup map for fixed polygon keys */
 var FIXED_POLY={kenyir:KENYIR,bakun:BAKUN,murum:MURUM,tarnita:TARNITA,vidraru:VIDRARU};
@@ -248,7 +256,7 @@ var SITES=[
    head:100,dist:0.2,slope:0.48,cap:5.0,anuGWh:15,anuH:18,anuWR:32.1},
   {id:"RO002",name:"Argeș–Vidraru",cls:"AAA",cty:"RO",
    u:{n:"Căpățânii Upper",lat:45.412,lng:24.578,elev:1850,area:0.72,bear:25,dlen:580},
-   l:{n:"Vidraru Lake",lat:45.362,lng:24.612,elev:830,area:9,dlen:0,fixed:"vidraru"},
+   l:{n:"Vidraru Lake",lat:45.375,lng:24.617,elev:830,area:9,dlen:0,fixed:"vidraru"},
    head:1020,dist:5.8,slope:0.176,cap:22.8},
   {id:"RO003",name:"Jiu Valley",cls:"AAA",cty:"RO",
    u:{n:"Parâng Upper",lat:45.322,lng:23.582,elev:1520,area:0.88,bear:350,dlen:680},
@@ -422,8 +430,8 @@ function refPoly(pts){
 refPoly(KENYIR);  refLabel(5.05,102.75,"Kenyir Lake");
 refPoly(BAKUN);   refLabel(2.78,114.20,"Bakun Res.");
 refPoly(MURUM);   refLabel(2.88,114.44,"Murum Res.");
-refPoly(TARNITA); refLabel(46.7342,23.354,"Tarnița Lake");
-refPoly(VIDRARU); refLabel(45.400,24.603,"Vidraru Lake");
+refPoly(TARNITA); refLabel(46.7440,23.355,"Tarnița Lake");
+refPoly(VIDRARU); refLabel(45.396,24.598,"Vidraru Lake");
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)

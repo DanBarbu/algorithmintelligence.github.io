@@ -8,68 +8,74 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:"Segoe UI",Arial,sans-serif;background:#0d1b2a;color:#e8f4f8;overflow:hidden}
-    #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#0d1b2a,#1a3a5c);border-bottom:2px solid #2a6496;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between}
+    body{font-family:"Segoe UI",Arial,sans-serif;background:#eef2f7;color:#1a2b3c;overflow:hidden}
+    #hdr{position:fixed;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#ffffff,#ddeeff);border-bottom:2px solid #2a6496;padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.12)}
     .h-left{display:flex;align-items:center;gap:12px}
-    .h-logo{width:36px;height:36px;background:#1a6eb5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-    .h-title{font-size:15px;font-weight:700;color:#7fc4e8;letter-spacing:.4px}
-    .h-sub{font-size:11px;color:#6c9ab5;margin-top:1px}
+    .h-logo{width:36px;height:36px;background:#2a6496;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .h-title{font-size:15px;font-weight:700;color:#1a4a7a;letter-spacing:.4px}
+    .h-sub{font-size:11px;color:#4a6a8a;margin-top:1px}
     .h-ctrl{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
-    .fg{display:flex;align-items:center;gap:6px;font-size:12px;color:#9ecde8;white-space:nowrap}
+    .fg{display:flex;align-items:center;gap:6px;font-size:12px;color:#2a5070;white-space:nowrap}
     .fg input[type=range]{width:110px;accent-color:#2a6496;cursor:pointer}
-    .fg select{background:#1a3a5c;border:1px solid #2a6496;border-radius:4px;color:#e8f4f8;padding:3px 7px;font-size:12px;cursor:pointer}
-    .capd{color:#7fc4e8;font-weight:600;min-width:58px;font-size:12px}
+    .fg select{background:#fff;border:1px solid #2a6496;border-radius:4px;color:#1a2b3c;padding:3px 7px;font-size:12px;cursor:pointer}
+    .capd{color:#1a4a7a;font-weight:600;min-width:58px;font-size:12px}
     #map{position:fixed;top:58px;left:0;right:0;bottom:28px}
-    #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#0a1520;border-top:1px solid #1a3a5c;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#6c9ab5;z-index:999}
-    #foot span{color:#7fc4e8;font-weight:600}
-    /* Info panel shown when a pair is expanded */
-    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#cde;display:none;max-width:230px}
-    #infopanel .ip-name{font-size:13px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
-    #infopanel .ip-hint{font-size:11px;color:#6c9ab5;margin-top:5px;line-height:1.4}
-    #infopanel .ip-close{float:right;cursor:pointer;color:#e74c3c;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
-    /* Popups */
-    .leaflet-popup-content-wrapper{background:rgba(10,21,32,.97)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#e8f4f8!important;box-shadow:0 4px 24px rgba(0,100,200,.35)!important}
-    .leaflet-popup-tip{background:rgba(10,21,32,.97)!important}
+    #foot{position:fixed;bottom:0;left:0;right:0;height:28px;background:#ddeeff;border-top:1px solid #aac4e0;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;color:#4a6a8a;z-index:999}
+    #foot span{color:#1a4a7a;font-weight:600}
+    #infopanel{position:fixed;top:68px;left:10px;z-index:900;background:rgba(255,255,255,.97);border:1px solid #2a6496;border-radius:8px;padding:10px 14px;font-size:12px;color:#1a2b3c;display:none;max-width:230px;box-shadow:0 3px 14px rgba(0,80,160,.18)}
+    #infopanel .ip-name{font-size:13px;font-weight:700;color:#1a4a7a;margin-bottom:4px}
+    #infopanel .ip-hint{font-size:11px;color:#4a6a8a;margin-top:5px;line-height:1.4}
+    #infopanel .ip-close{float:right;cursor:pointer;color:#c0392b;font-weight:700;font-size:14px;line-height:1;margin-left:8px}
+    .leaflet-popup-content-wrapper{background:rgba(255,255,255,.98)!important;border:1px solid #2a6496!important;border-radius:8px!important;color:#1a2b3c!important;box-shadow:0 4px 24px rgba(0,80,160,.22)!important}
+    .leaflet-popup-tip{background:rgba(255,255,255,.98)!important}
     .leaflet-popup-content{margin:14px!important;min-width:270px}
-    /* Tooltip */
-    .hb-tip{background:rgba(10,21,32,.95)!important;border:1px solid #2a6496!important;color:#e8f4f8!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,100,200,.3)!important;padding:6px 10px!important}
+    .hb-tip{background:rgba(255,255,255,.97)!important;border:1px solid #2a6496!important;color:#1a2b3c!important;border-radius:6px!important;font-size:12px!important;box-shadow:0 2px 10px rgba(0,80,160,.18)!important;padding:6px 10px!important}
     .hb-tip::before{display:none}
-    /* Popup content styles */
-    .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #1a3a5c;padding-bottom:8px}
-    .ph h3{font-size:14px;color:#7fc4e8;flex:1;margin:0}
+    .ph{display:flex;align-items:center;gap:9px;margin-bottom:10px;border-bottom:1px solid #ccdaee;padding-bottom:8px}
+    .ph h3{font-size:14px;color:#1a4a7a;flex:1;margin:0}
     .cb{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.4px}
-    .cb.aaa{background:#b8860b;color:#fff8dc}
-    .cb.aa{background:#c0392b;color:#ffe0e0}
-    .cb.a{background:#1a6b3a;color:#ccffcc}
-    .lt{font-size:10px;padding:2px 8px;border-radius:10px;background:#1a3a5c;color:#7fc4e8;border:1px solid #2a6496;white-space:nowrap}
+    .cb.aaa{background:#e8a000;color:#fff}
+    .cb.aa{background:#c0392b;color:#fff}
+    .cb.a{background:#1a7a3a;color:#fff}
+    .lt{font-size:10px;padding:2px 8px;border-radius:10px;background:#ddeeff;color:#1a4a7a;border:1px solid #aac4e0;white-space:nowrap}
     .it{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
-    .it td{padding:3px 6px;border-bottom:1px solid #0f2030}
-    .it td:first-child{color:#9ecde8;width:58%}
-    .it td:last-child{font-weight:600}
-    .cs{margin:10px 0;padding:8px 10px;background:#060f18;border-radius:6px;border:1px solid #1a3a5c}
-    .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#9ecde8}
-    .cv{color:#7fc4e8;font-weight:700;font-size:14px}
+    .it td{padding:3px 6px;border-bottom:1px solid #e0eaf4}
+    .it td:first-child{color:#4a6a8a;width:58%}
+    .it td:last-child{font-weight:600;color:#1a2b3c}
+    .cs{margin:10px 0;padding:8px 10px;background:#f0f6ff;border-radius:6px;border:1px solid #ccdaee}
+    .cl{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;color:#4a6a8a}
+    .cv{color:#1a4a7a;font-weight:700;font-size:14px}
     .csl{width:100%;accent-color:#2a6496;cursor:pointer}
     .ct{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}
-    .ct th{background:#1a3a5c;color:#7fc4e8;padding:4px 6px;font-size:11px;text-align:center}
+    .ct th{background:#ddeeff;color:#1a4a7a;padding:4px 6px;font-size:11px;text-align:center}
     .ct th:first-child{text-align:left}
-    .ct td{padding:3px 6px;border-bottom:1px solid #060f18;text-align:center}
-    .ct td:first-child{color:#9ecde8;text-align:left}
-    .ct tr:hover td{background:#1a2535}
+    .ct td{padding:3px 6px;border-bottom:1px solid #eef2f7;text-align:center;color:#1a2b3c}
+    .ct td:first-child{color:#4a6a8a;text-align:left}
+    .ct tr:hover td{background:#e8f0f8}
     .os{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-    .or{background:#060f18;border-radius:5px;padding:5px 8px;text-align:center;border:1px solid #1a3a5c}
-    .or span{display:block;font-size:10px;color:#9ecde8;margin-bottom:2px}
-    .or strong{font-size:13px;color:#7fc4e8}
+    .or{background:#f0f6ff;border-radius:5px;padding:5px 8px;text-align:center;border:1px solid #ccdaee}
+    .or span{display:block;font-size:10px;color:#4a6a8a;margin-bottom:2px}
+    .or strong{font-size:13px;color:#1a4a7a}
     .or.full{grid-column:1/-1}
     .lh{margin-bottom:8px}
-    .lt2{font-size:14px;font-weight:700;color:#7fc4e8;margin-bottom:4px}
-    .legend{background:rgba(10,21,32,.93);border:1px solid #2a6496;border-radius:8px;padding:12px;font-size:12px;color:#cde}
-    .legend h4{font-size:12px;color:#7fc4e8;margin-bottom:7px;border-bottom:1px solid #1a3a5c;padding-bottom:4px;letter-spacing:.3px}
+    .lt2{font-size:14px;font-weight:700;color:#1a4a7a;margin-bottom:4px}
+    .legend{background:rgba(255,255,255,.95);border:1px solid #aac4e0;border-radius:8px;padding:12px;font-size:12px;color:#1a2b3c;box-shadow:0 2px 8px rgba(0,80,160,.12)}
+    .legend h4{font-size:12px;color:#1a4a7a;margin-bottom:7px;border-bottom:1px solid #ccdaee;padding-bottom:4px;letter-spacing:.3px}
     .li{display:flex;align-items:center;gap:8px;margin-bottom:5px}
     .ls{width:15px;height:15px;border-radius:3px;flex-shrink:0}
     .lc{width:15px;height:15px;border-radius:50%;flex-shrink:0}
     .lp{width:22px;height:0;border-top:3px dashed;flex-shrink:0}
-    /* Expanded dot pulse ring */
+    .anu-btn{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;background:#1a6496;color:#fff;border-radius:5px;font-size:11px;font-weight:600;text-decoration:none;border:none;cursor:pointer;letter-spacing:.3px}
+    .anu-btn:hover{background:#2a80bf;color:#fff}
+    .anu-hdr-btn{background:#1a6496;color:#fff;border:none;border-radius:5px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .anu-hdr-btn:hover{background:#2a80bf}
+    #anu-panel{position:fixed;top:58px;right:0;width:480px;bottom:28px;z-index:800;background:#111;border-left:3px solid #2a6496;display:none;flex-direction:column}
+    #anu-panel iframe{flex:1;border:none;width:100%;height:100%}
+    #anu-panel .anu-fb{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#aaa;font-size:13px;padding:20px;text-align:center}
+    #anu-panel .anu-fb a{color:#5ab0e8}
+    #anu-resize{position:fixed;top:58px;right:480px;width:6px;bottom:28px;background:#2a6496;cursor:ew-resize;z-index:801;display:none}
+    .leaflet-control-geocoder{border:1px solid #2a6496!important;border-radius:6px!important;box-shadow:0 2px 8px rgba(0,80,160,.18)!important}
+    .leaflet-control-geocoder-form input{font-size:12px!important}
     @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
     .dot-pulse{animation:pulse 1.5s ease-out infinite}
   </style>
@@ -79,8 +85,8 @@
   <div class="h-left">
     <div class="h-logo">&#128167;</div>
     <div>
-      <div class="h-title">Malaysia Hydrobattery Atlas</div>
-      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Kenyir Bluefield sites</div>
+      <div class="h-title">Malaysia &amp; Romania Hydrobattery Atlas</div>
+      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Bluefield sites</div>
     </div>
   </div>
   <div class="h-ctrl">
@@ -96,7 +102,25 @@
         <option value="A">A &mdash; Viable</option>
       </select>
     </div>
+    <div class="fg"><label>Country:</label>
+      <select id="cntF" onchange="applyFilters()">
+        <option value="all">All Countries</option>
+        <option value="MY">Malaysia</option>
+        <option value="RO">Romania</option>
+      </select>
+    </div>
+    <button class="anu-hdr-btn" onclick="toggleANU()" title="Open ANU PHES Atlas side-by-side">&#127760; ANU Atlas</button>
   </div>
+</div>
+<div id="anu-resize"></div>
+<div id="anu-panel">
+  <div class="anu-fb" id="anu-fb">
+    <div style="font-size:24px">&#127760;</div>
+    <div>Loading ANU RE100 PHES Atlas…</div>
+    <div style="font-size:11px">If the atlas does not appear, it may block embedding.</div>
+    <a id="anu-ext" href="https://re100.anu.edu.au/" target="_blank">&#x2197; Open ANU Atlas in new tab</a>
+  </div>
+  <iframe id="anu-iframe" src="about:blank" allowfullscreen></iframe>
 </div>
 <div id="map"></div>
 <div id="infopanel">
@@ -107,13 +131,14 @@
 </div>
 <div id="foot">
   <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
-  <div><span id="cnt">12</span> PHES pairs &bull; click a dot to view reservoirs &amp; pipeline</div>
+  <div><span id="cnt">24</span> PHES pairs (MY + RO) &bull; click a dot to view reservoirs &amp; pipeline</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script>
-/* ── Kenyir Lake polygon (145 m water level, Terengganu) ────────────────
-   Simplified boundary matching known reservoir outline ~260 km²           */
+/* ── Existing-reservoir polygons ─────────────────────────────────────────
+   Used as fixed lower (or upper) reservoirs for Bluefield PHES sites.    */
+/* Kenyir Lake, Terengganu MY — 145 m, ~260 km² */
 var KENYIR=[
   [4.740,102.728],[4.762,102.754],[4.778,102.773],[4.800,102.791],
   [4.825,102.813],[4.858,102.831],[4.893,102.846],[4.938,102.865],
@@ -123,69 +148,164 @@ var KENYIR=[
   [4.945,102.628],[4.898,102.611],[4.865,102.628],[4.838,102.651],
   [4.798,102.668],[4.765,102.690],[4.745,102.715],[4.740,102.728]
 ];
+/* Bakun Reservoir, Sarawak MY — 228 m, ~695 km² */
+var BAKUN=[
+  [2.758,114.220],[2.842,114.375],[2.952,114.418],[2.982,114.282],
+  [2.925,114.125],[2.862,114.058],[2.752,113.988],[2.658,114.025],
+  [2.582,114.118],[2.595,114.232],[2.685,114.282],[2.758,114.220]
+];
+/* Murum Reservoir, Sarawak MY — 566 m, ~245 km² */
+var MURUM=[
+  [2.852,114.448],[2.925,114.522],[2.948,114.498],[2.935,114.412],
+  [2.882,114.362],[2.812,114.348],[2.748,114.378],[2.762,114.432],
+  [2.818,114.472],[2.852,114.448]
+];
+/* Tarnița Lake (Lacul Tarnița/Gilău), Cluj RO — 420 m, ~2.69 km²
+   ANU id: n46_e023_RES23783, centroid 46.7331°N 23.3547°E
+   Compact irregular N–S elongated shape following Someș Cald valley */
+var TARNITA=[
+  [46.7222,23.3402],[46.7229,23.3419],[46.7252,23.3446],
+  [46.7279,23.3472],[46.7296,23.3494],[46.7314,23.3522],
+  [46.7334,23.3559],[46.7346,23.3592],[46.7362,23.3614],
+  [46.7379,23.3639],[46.7396,23.3662],[46.7414,23.3676],
+  [46.7432,23.3692],[46.7439,23.3682],[46.7422,23.3664],
+  [46.7402,23.3644],[46.7379,23.3622],[46.7359,23.3599],
+  [46.7332,23.3564],[46.7309,23.3532],[46.7286,23.3504],
+  [46.7262,23.3476],[46.7229,23.3442],[46.7222,23.3402]
+];
+/* Vidraru Lake, Argeș RO — 830 m, ~8.93 km²
+   ANU id: lower for RO002; dendritic reservoir on Argeș + Capra rivers */
+var VIDRARU=[
+  [45.3525,24.6382],[45.3538,24.6390],[45.3562,24.6368],
+  [45.3590,24.6342],[45.3618,24.6308],[45.3652,24.6275],
+  [45.3688,24.6248],[45.3720,24.6215],[45.3762,24.6182],
+  [45.3830,24.6118],[45.3905,24.6058],[45.3960,24.5988],
+  [45.3942,24.5962],[45.3875,24.6028],[45.3808,24.6088],
+  [45.3748,24.6155],[45.3698,24.6192],[45.3655,24.6232],
+  [45.3612,24.6272],[45.3572,24.6318],[45.3540,24.6355],
+  [45.3525,24.6382]
+];
+/* Lookup map for fixed polygon keys */
+var FIXED_POLY={kenyir:KENYIR,bakun:BAKUN,murum:MURUM,tarnita:TARNITA,vidraru:VIDRARU};
 
 /* ── Sites ──────────────────────────────────────────────────────────────
+   cty = country code (MY / RO)
    area = base surface area at default cap (km²)
-   bear = valley axis bearing °N (for valley-shaped polygons)
-   l.fixed = true  →  lower reservoir is KENYIR (existing lake, no dam)
-   Kenyir Bluefield: head 90-130 m (existing lake as lower reservoir).
-   KY001 is ANU-confirmed: n05_e102_RES68377+RES_2011, Class AA,
-   head 107 m, vol 692.7 GL / 150 GWh at 50 h, W/R pair 182.7.          */
+   bear = valley axis °N (valley-shaped polygon)
+   r.fixed = 'key' → use FIXED_POLY[key] (existing reservoir)           */
 var SITES=[
-  /* — Peninsular greenfield off-river sites — */
-  {id:"MY001",name:"Cameron Ridge",cls:"AAA",
+
+  /* ════ MALAYSIA — Peninsular greenfield ════ */
+  {id:"MY001",name:"Cameron Ridge",cls:"AAA",cty:"MY",
    u:{n:"Ulu Telom Upper",lat:4.501,lng:101.401,elev:1420,area:0.85,bear:340,dlen:680},
    l:{n:"Telom Valley",lat:4.462,lng:101.435,elev:680,area:1.20,bear:160,dlen:820},
    head:740,dist:5.8,slope:0.128,cap:18.9},
-  {id:"MY002",name:"Titiwangsa Peak",cls:"AA",
+  {id:"MY002",name:"Titiwangsa Peak",cls:"AA",cty:"MY",
    u:{n:"Ulu Slim Upper",lat:3.751,lng:101.381,elev:1580,area:0.72,bear:350,dlen:620},
    l:{n:"Slim Valley",lat:3.712,lng:101.415,elev:820,area:1.05,bear:170,dlen:780},
    head:760,dist:6.2,slope:0.123,cap:16.0},
-  {id:"MY003",name:"Fraser Highland",cls:"A",
+  {id:"MY003",name:"Fraser Highland",cls:"A",cty:"MY",
    u:{n:"Ulu Semantan Upper",lat:3.721,lng:101.752,elev:1200,area:0.95,bear:20,dlen:730},
    l:{n:"Semantan Reservoir",lat:3.681,lng:101.783,elev:450,area:1.35,bear:200,dlen:880},
    head:750,dist:5.4,slope:0.139,cap:21.5},
-  {id:"MY004",name:"Genting Sempah",cls:"A",
+  {id:"MY004",name:"Genting Sempah",cls:"A",cty:"MY",
    u:{n:"Genting Upper",lat:3.441,lng:101.801,elev:1300,area:0.68,bear:315,dlen:590},
    l:{n:"Klang Gates",lat:3.401,lng:101.832,elev:540,area:0.98,bear:135,dlen:750},
    head:760,dist:5.9,slope:0.129,cap:12.5},
-  {id:"MY005",name:"Crocker Range",cls:"AAA",
+  {id:"MY009",name:"Kelantan Highland",cls:"AA",cty:"MY",
+   u:{n:"Ulu Galas Upper",lat:4.825,lng:101.918,elev:1080,area:0.82,bear:5,dlen:680},
+   l:{n:"Galas Valley Lower",lat:4.780,lng:101.952,elev:460,area:1.15,bear:185,dlen:800},
+   head:620,dist:6.8,slope:0.091,cap:16.2},
+  {id:"MY010",name:"Pahang Highlands",cls:"AA",cty:"MY",
+   u:{n:"Sg. Semantan Highland",lat:3.852,lng:102.048,elev:1120,area:0.95,bear:15,dlen:730},
+   l:{n:"Semantan Valley Lower",lat:3.812,lng:102.082,elev:380,area:1.32,bear:195,dlen:870},
+   head:740,dist:6.5,slope:0.114,cap:21.8},
+
+  /* ════ MALAYSIA — Borneo greenfield ════ */
+  {id:"MY005",name:"Crocker Range",cls:"AAA",cty:"MY",
    u:{n:"Sg. Pegalan Upper",lat:5.851,lng:116.301,elev:1480,area:1.05,bear:10,dlen:790},
    l:{n:"Pegalan Valley",lat:5.801,lng:116.341,elev:680,area:1.42,bear:190,dlen:930},
    head:800,dist:6.8,slope:0.118,cap:25.8},
-  {id:"MY006",name:"Kelabit Highlands",cls:"AA",
+  {id:"MY006",name:"Kelabit Highlands",cls:"AA",cty:"MY",
    u:{n:"Bario Upper",lat:3.741,lng:115.501,elev:1150,area:0.88,bear:30,dlen:700},
-   l:{n:"Pa Lungan",lat:3.701,lng:115.535,elev:380,area:1.18,bear:210,dlen:840},
+   l:{n:"Pa Lungan Lower",lat:3.701,lng:115.535,elev:380,area:1.18,bear:210,dlen:840},
    head:770,dist:5.6,slope:0.138,cap:20.8},
-  {id:"MY007",name:"Ulu Endau",cls:"A",
+  {id:"MY007",name:"Ulu Endau",cls:"A",cty:"MY",
    u:{n:"Sg. Endau Upper",lat:2.651,lng:103.481,elev:980,area:0.78,bear:355,dlen:650},
    l:{n:"Endau Reservoir",lat:2.611,lng:103.511,elev:230,area:1.08,bear:175,dlen:780},
    head:750,dist:5.2,slope:0.144,cap:14.5},
-  {id:"MY008",name:"Sabah Highland",cls:"AA",
+  {id:"MY008",name:"Sabah Highland",cls:"AA",cty:"MY",
    u:{n:"Sg. Moyog Upper",lat:5.401,lng:116.851,elev:1350,area:0.92,bear:5,dlen:720},
    l:{n:"Moyog Valley",lat:5.361,lng:116.882,elev:580,area:1.28,bear:185,dlen:860},
    head:770,dist:5.5,slope:0.140,cap:22.0},
+  {id:"MY011",name:"Baram Sarawak",cls:"AAA",cty:"MY",
+   u:{n:"Ulu Baram Upper",lat:3.455,lng:114.828,elev:950,area:1.12,bear:20,dlen:820},
+   l:{n:"Baram Valley Lower",lat:3.395,lng:114.862,elev:280,area:1.48,bear:200,dlen:950},
+   head:670,dist:8.8,slope:0.076,cap:22.5},
 
-  /* — Kenyir Lake Bluefield (lower = Kenyir Lake 145 m, existing) — */
-  /* KY001: ANU confirmed n05_e102_RES68377+RES_2011. 6 h base shown.
-     Full design: 692.7 GL / 150 GWh / 3 GW at 50 h, W/R 182.7 pair.  */
-  {id:"KY001",name:"Kenyir West (ANU confirmed)",cls:"AA",
+  /* ════ MALAYSIA — Kenyir Bluefield (lower = Kenyir Lake 145 m) ════ */
+  /* KY001 ANU-confirmed n05_e102_RES68377+RES_2011, AA, head 107 m,
+     692.7 GL / 150 GWh at 50 h, W/R pair 182.7. Slider base = 6 h.   */
+  {id:"KY001",name:"Kenyir West",cls:"AA",cty:"MY",
    u:{n:"RES68377 Upper",lat:5.111,lng:102.610,elev:252,area:4.2,bear:285,dlen:1180},
-   l:{n:"Kenyir Lake",lat:5.110,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   l:{n:"Kenyir Lake",lat:5.110,lng:102.632,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:107,dist:1.0,slope:0.107,cap:18.2,anuWR:182.7,anuGWh:150,anuH:50},
-  /* KY002-KY004: estimated per ANU Bluefield methodology, Kenyir vicinity */
-  {id:"KY002",name:"Kenyir North-West",cls:"AAA",
-   u:{n:"Gunung Stong Foothills Upper",lat:5.188,lng:102.650,elev:270,area:3.6,bear:310,dlen:1050},
-   l:{n:"Kenyir Lake",lat:5.155,lng:102.685,elev:145,area:260,bear:0,dlen:0,fixed:true},
+  {id:"KY002",name:"Kenyir North-West",cls:"AAA",cty:"MY",
+   u:{n:"Stong Foothills Upper",lat:5.188,lng:102.650,elev:270,area:3.6,bear:310,dlen:1050},
+   l:{n:"Kenyir Lake",lat:5.155,lng:102.685,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:125,dist:2.5,slope:0.050,cap:21.5},
-  {id:"KY003",name:"Kenyir South-West",cls:"AA",
+  {id:"KY003",name:"Kenyir South-West",cls:"AA",cty:"MY",
    u:{n:"Tembat Highland Upper",lat:4.935,lng:102.562,elev:248,area:3.2,bear:250,dlen:980},
-   l:{n:"Kenyir Lake",lat:4.948,lng:102.632,elev:145,area:260,bear:0,dlen:0,fixed:true},
+   l:{n:"Kenyir Lake",lat:4.948,lng:102.632,elev:145,area:260,dlen:0,fixed:"kenyir"},
    head:103,dist:1.8,slope:0.057,cap:15.8},
-  {id:"KY004",name:"Kenyir South",cls:"A",
+  {id:"KY004",name:"Kenyir South",cls:"A",cty:"MY",
    u:{n:"Menerong Upper",lat:4.825,lng:102.842,elev:235,area:2.8,bear:130,dlen:890},
-   l:{n:"Kenyir Lake",lat:4.862,lng:102.822,elev:145,area:260,bear:0,dlen:0,fixed:true},
-   head:90,dist:3.2,slope:0.028,cap:10.5}
+   l:{n:"Kenyir Lake",lat:4.862,lng:102.822,elev:145,area:260,dlen:0,fixed:"kenyir"},
+   head:90,dist:3.2,slope:0.028,cap:10.5},
+
+  /* ════ MALAYSIA — Bakun-Murum Bluefield (both existing, Sarawak) ════ */
+  /* ANU: 3 GW / 150 GWh at 50 h, head 300-338 m, 12 km aqueduct+3 km tunnel */
+  {id:"BM001",name:"Bakun–Murum",cls:"AAA",cty:"MY",
+   u:{n:"Murum Reservoir",lat:2.852,lng:114.448,elev:566,area:245,dlen:0,fixed:"murum"},
+   l:{n:"Bakun Reservoir",lat:2.752,lng:114.218,elev:228,area:695,dlen:0,fixed:"bakun"},
+   head:338,dist:30.5,slope:0.011,cap:18.0,anuGWh:150,anuH:50},
+
+  /* ════ ROMANIA — Carpathian Mountain sites ════ */
+  /* RO001: Tarnița Bluefield — ANU site RES_143844 & n46_e023_RES23783.
+     ANU Class C, head 100 m, sep 0.2 km, W/R 32.1.
+     Full design: 15 GWh / 18 h / 833 MW.  Upper (RES_143844) new; lower = Tarnița Lake. */
+  {id:"RO001",name:"Tarnița–Lăpuștești",cls:"AA",cty:"RO",
+   u:{n:"RES_143844 Upper",lat:46.7217,lng:23.2786,elev:520,area:1.36,bear:258,dlen:354},
+   l:{n:"Tarnița Lake",lat:46.7331,lng:23.3547,elev:420,area:2.69,dlen:0,fixed:"tarnita"},
+   head:100,dist:0.2,slope:0.48,cap:5.0,anuGWh:15,anuH:18,anuWR:32.1},
+  {id:"RO002",name:"Argeș–Vidraru",cls:"AAA",cty:"RO",
+   u:{n:"Căpățânii Upper",lat:45.412,lng:24.578,elev:1850,area:0.72,bear:25,dlen:580},
+   l:{n:"Vidraru Lake",lat:45.375,lng:24.617,elev:830,area:9,dlen:0,fixed:"vidraru"},
+   head:1020,dist:5.8,slope:0.176,cap:22.8},
+  {id:"RO003",name:"Jiu Valley",cls:"AAA",cty:"RO",
+   u:{n:"Parâng Upper",lat:45.322,lng:23.582,elev:1520,area:0.88,bear:350,dlen:680},
+   l:{n:"Jiu Valley Lower",lat:45.252,lng:23.542,elev:680,area:1.25,bear:170,dlen:810},
+   head:840,dist:9.2,slope:0.091,cap:22.8},
+  {id:"RO004",name:"Retezat Peaks",cls:"AAA",cty:"RO",
+   u:{n:"Retezat Upper",lat:45.382,lng:22.902,elev:2000,area:0.92,bear:330,dlen:650},
+   l:{n:"Retezat Valley Lower",lat:45.322,lng:22.852,elev:1100,area:1.28,bear:150,dlen:790},
+   head:900,dist:7.8,slope:0.115,cap:23.8},
+  {id:"RO005",name:"Bucegi–Sinaia",cls:"AA",cty:"RO",
+   u:{n:"Bucegi Plateau Upper",lat:45.382,lng:25.542,elev:1850,area:0.78,bear:40,dlen:610},
+   l:{n:"Prahova Valley Lower",lat:45.322,lng:25.482,elev:820,area:1.12,bear:220,dlen:740},
+   head:1030,dist:8.6,slope:0.120,cap:26.5},
+  {id:"RO006",name:"Bistrița Moldovei",cls:"AA",cty:"RO",
+   u:{n:"Ceahlău Upper",lat:47.122,lng:25.822,elev:1280,area:0.75,bear:5,dlen:600},
+   l:{n:"Bistrița Valley Lower",lat:47.052,lng:25.852,elev:560,area:1.08,bear:185,dlen:730},
+   head:720,dist:8.4,slope:0.086,cap:19.5},
+  {id:"RO007",name:"Argeș Highlands",cls:"A",cty:"RO",
+   u:{n:"Olt–Argeș Divide Upper",lat:45.522,lng:24.722,elev:1400,area:0.68,bear:350,dlen:560},
+   l:{n:"Argeș Valley Lower",lat:45.452,lng:24.682,elev:680,area:0.98,bear:170,dlen:690},
+   head:720,dist:8.8,slope:0.082,cap:18.2},
+  {id:"RO008",name:"Almăj–Banat",cls:"A",cty:"RO",
+   u:{n:"Almăj Upper",lat:44.882,lng:22.122,elev:820,area:0.62,bear:25,dlen:510},
+   l:{n:"Nera Valley Lower",lat:44.822,lng:22.082,elev:215,area:0.92,bear:205,dlen:640},
+   head:605,dist:8.2,slope:0.074,cap:15.5}
 ];
 
 /* ── Calculation helpers ──────────────────────────────────────────────── */
@@ -196,8 +316,8 @@ function rv(h,len){return 2*h*h*len/1e6;}
 function scaledArea(baseA,baseCap,cap){return baseA*Math.sqrt(cap/baseCap);}
 function metrics(s,cap){
   var v=vol(cap,s.head);
-  var aU=scaledArea(s.u.area,s.cap,cap);
-  var uh=dh(v,aU),ur=rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
+  var aU=s.u.fixed?s.u.area:scaledArea(s.u.area,s.cap,cap);
+  var uh=s.u.fixed?0:dh(v,aU),ur=s.u.fixed?0:rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
   var lh=0,lr=0,lwr=0;
   if(!s.l.fixed){var aL=scaledArea(s.l.area,s.cap,cap);lh=dh(v,aL);lr=rv(lh,s.l.dlen);lwr=lr>0?v/lr:999;}
   return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:uwr,lwr:lwr,
@@ -235,10 +355,10 @@ function valleyPoly(lat,lng,area,bear,seed){
 }
 /* Select polygon for reservoir r at current cap */
 function resPoly(r,s,cap,isUpper){
-  if(r.fixed)return KENYIR;
+  if(r.fixed)return FIXED_POLY[r.fixed]||KENYIR;
   var seed=SITES.indexOf(s)+(isUpper?0:5);
   var a=scaledArea(r.area,s.cap,cap);
-  if(r.bear!==undefined&&(r.fixed===undefined))return valleyPoly(r.lat,r.lng,a,r.bear,seed);
+  if(r.bear!==undefined)return valleyPoly(r.lat,r.lng,a,r.bear,seed);
   return roundPoly(r.lat,r.lng,a,seed);
 }
 
@@ -249,6 +369,7 @@ function lakeHTML(s,w,cap){
   cap=cap||s.cap;
   var r=s[w],v=vol(cap,s.head);
   var a=r.fixed?r.area:scaledArea(r.area,s.cap,cap);
+  var isFixed=!!r.fixed;
   var html="<div class='lh'><div class='lt2'>"+r.n+"</div>"+
     "<span class='lt'>"+(w==="u"?"&#9650; Upper":"&#9660; Lower")+" Reservoir</span></div>"+
     "<table class='it'>"+
@@ -257,9 +378,8 @@ function lakeHTML(s,w,cap){
     "<tr><td>Elevation</td><td>"+r.elev+" m</td></tr>"+
     "<tr><td>Water Area</td><td>"+a.toFixed(2)+" km&sup2;</td></tr>"+
     "<tr><td>Water Volume</td><td>"+v.toFixed(1)+" GL</td></tr>";
-  if(r.fixed){
-    html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>"+
-      "<tr><td>Original capacity</td><td>400 MW hydro</td></tr>";
+  if(isFixed){
+    html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>";
     if(s.anuWR)html+="<tr><td>ANU W/R (pair)</td><td>"+s.anuWR+"</td></tr>"+
       "<tr><td>ANU full design</td><td>"+s.anuGWh+" GWh / "+s.anuH+" h</td></tr>";
   }else{
@@ -308,16 +428,79 @@ function pipeHTML(s,capOvr){
       "<div class='or'><span>Power Output</span><strong id='pw-"+s.id+"'>"+m.pw.toFixed(0)+" MW</strong></div>"+
       "<div class='or'><span>Round-trip Efficiency</span><strong>75 %</strong></div>"+
       "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
-    "</div>";
+    "</div>"+
+    "<a class='anu-btn' href='"+anuUrl(s)+"' target='_blank' onclick='openANU(\""+s.id+"\");return false;'>&#127760; View in ANU PHES Atlas at this location</a>";
 }
 
 /* ── Map ─────────────────────────────────────────────────────────────── */
 var map=L.map("map",{center:[4.2,109.5],zoom:6});
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-  {attribution:"&copy; OSM &copy; CartoDB",maxZoom:19}).addTo(map);
+/* CartoDB Voyager — light, shows real water bodies + terrain in colour */
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  {attribution:"&copy; OpenStreetMap contributors &copy; CartoDB",maxZoom:19}).addTo(map);
 
-var dotLayer=L.featureGroup().addTo(map);   // always-visible dot markers
+var pipeLayer=L.featureGroup().addTo(map);   // always-visible pipeline paths
+var dotLayer=L.featureGroup().addTo(map);    // always-visible dot markers
 var detailLayer=L.featureGroup().addTo(map); // expanded lake polygons + pipeline
+var pipeCache={};                            // site.id -> background pipeline polyline
+
+/* ── ANU Atlas integration ───────────────────────────────────────────── */
+/* Build TerriaJS URL to open ANU at the PHES pair location              */
+function anuUrl(s){
+  var lat=(s.u.lat+s.l.lat)/2,lng=(s.u.lng+s.l.lng)/2;
+  var pad=0.06;
+  /* TerriaJS camera rectangle + Bluefield layer enabled */
+  var state={"version":"8.0.0",
+    "camera":{"west":lng-pad,"south":lat-pad*0.7,"east":lng+pad,"north":lat+pad*0.7},
+    "initSources":[{"stratum":"user","models":{
+      "https://storage.googleapis.com/recast-api-prod-bucket/api/v2/phes_atlas/global_bluefield_15GWh_18h.json":
+        {"type":"geojson","isEnabled":true,"isShown":true}
+    }}]};
+  return "https://re100.anu.edu.au/#start="+encodeURIComponent(JSON.stringify(state));
+}
+/* Open ANU side-panel at specific site location */
+window.openANU=function(id){
+  var s=SITES.find(function(x){return x.id===id;});
+  if(!s)return;
+  var panel=document.getElementById("anu-panel");
+  var iframe=document.getElementById("anu-iframe");
+  var resize=document.getElementById("anu-resize");
+  panel.style.display="flex";resize.style.display="block";
+  iframe.src=anuUrl(s);
+  document.getElementById("anu-ext").href=anuUrl(s);
+  /* shrink map */
+  document.getElementById("map").style.right="480px";
+  setTimeout(function(){map.invalidateSize();},320);
+};
+window.toggleANU=function(){
+  var panel=document.getElementById("anu-panel");
+  var resize=document.getElementById("anu-resize");
+  var open=panel.style.display==="flex";
+  if(open){
+    panel.style.display="none";resize.style.display="none";
+    document.getElementById("map").style.right="0";
+  }else{
+    panel.style.display="flex";resize.style.display="block";
+    document.getElementById("map").style.right="480px";
+    document.getElementById("anu-iframe").src=
+      "https://re100.anu.edu.au/#start="+encodeURIComponent(JSON.stringify({"version":"8.0.0"}));
+  }
+  setTimeout(function(){map.invalidateSize();},320);
+};
+
+/* ── Always-visible reference overlays ──────────────────────────────── */
+function refLabel(lat,lng,txt){
+  L.marker([lat,lng],{icon:L.divIcon({className:"",html:
+    "<div style='color:#1a4a7a;font-size:10px;font-weight:700;white-space:nowrap;background:rgba(255,255,255,.75);padding:1px 4px;border-radius:3px;border:1px solid #aac4e0'>"+txt+"</div>",
+    iconAnchor:[30,-4]}),interactive:false}).addTo(map);
+}
+function refPoly(pts){
+  L.polygon(pts,{color:"#2a6496",fillColor:"#5ab0e8",fillOpacity:.22,weight:1.8,opacity:.7,interactive:false}).addTo(map);
+}
+refPoly(KENYIR);  refLabel(5.05,102.75,"Kenyir Lake");
+refPoly(BAKUN);   refLabel(2.78,114.20,"Bakun Res.");
+refPoly(MURUM);   refLabel(2.88,114.44,"Murum Res.");
+refPoly(TARNITA); refLabel(46.7440,23.355,"Tarnița Lake");
+refPoly(VIDRARU); refLabel(45.396,24.598,"Vidraru Lake");
 
 var expanded=null;   // currently expanded site ID
 var detailCache={};  // site.id -> L.featureGroup (built on first expand)
@@ -330,10 +513,10 @@ function buildDetail(s,i,capOvr){
   var col=clsCol(s.cls);
   var grp=L.featureGroup();
   var up=L.polygon(resPoly(s.u,s,cap,true),
-    {color:col,fillColor:"#4db8ff",fillOpacity:.6,weight:2,opacity:.95});
+    {color:col,fillColor:"#2980b9",fillOpacity:.55,weight:2.5,opacity:1});
   up.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
   var lo=L.polygon(resPoly(s.l,s,cap,false),
-    {color:col,fillColor:"#80d4ff",fillOpacity:.45,weight:2,opacity:.95});
+    {color:col,fillColor:"#5dade2",fillOpacity:.40,weight:2.5,opacity:1});
   lo.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
   var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
     {color:col,weight:3,dashArray:"8 5",opacity:.95});
@@ -342,12 +525,13 @@ function buildDetail(s,i,capOvr){
     lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
     lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
   }
-  hov(up,.88,.60);hov(lo,.75,.45);
+  hov(up,.82,.55);hov(lo,.70,.40);
   pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
   pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
   grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
   /* store refs for live polygon resize */
   grp._upLayer=up;grp._loLayer=lo;grp._pipeLayer=pipe;grp._cap=cap;
+  grp._uFixed=!!s.u.fixed;
   return grp;
 }
 
@@ -359,7 +543,9 @@ window.collapse=function(){
   map.closePopup();
   /* restore dot appearance */
   var dot=dotCache[expanded];
-  if(dot){var col=clsCol(dot._site.cls);dot.setStyle({radius:dot._r,fillOpacity:.75,weight:2,color:col,fillColor:col});}
+  if(dot){dot.setStyle({radius:dot._r,fillOpacity:.9,weight:2,color:"#fff",fillColor:clsCol(dot._site.cls)});}
+  var bgPl=pipeCache[expanded];
+  if(bgPl)bgPl.setStyle({weight:2.5,opacity:0.72,dashArray:"7 5"});
   document.getElementById("infopanel").style.display="none";
   expanded=null;
 };
@@ -372,10 +558,24 @@ function expand(s,i){
   detailLayer.addLayer(detailCache[s.id]);
   expanded=s.id;
   /* zoom to the pair */
-  map.fitBounds(detailCache[s.id].getBounds().pad(0.7),{maxZoom:13,animate:true});
-  /* highlight the dot */
+  /* Smart zoom: fixed-lake sites have huge existing polygons that would
+     zoom the map OUT instead of in.  Use targeted flyTo instead.         */
+  if(s.l.fixed&&!s.u.fixed){
+    /* Bluefield: fitBounds on the full detail group (both polygons + pipe) */
+    map.fitBounds(detailCache[s.id].getBounds().pad(0.4),{maxZoom:13,animate:true});
+  }else if(s.u.fixed&&s.l.fixed){
+    /* Both existing (Bakun-Murum): fit between the two lake centroids   */
+    map.fitBounds(L.latLngBounds([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]]).pad(0.3),
+      {maxZoom:10,animate:true});
+  }else{
+    /* Greenfield: fit the polygons + pipeline, zoom limit 14            */
+    map.fitBounds(detailCache[s.id].getBounds().pad(0.6),{maxZoom:14,animate:true});
+  }
+  /* highlight dot + thicken background pipeline */
   var dot=dotCache[s.id];
-  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:3,color:"#fff",fillColor:clsCol(s.cls)});
+  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:2.5,color:"#fff",fillColor:clsCol(s.cls)});
+  var bgPl=pipeCache[s.id];
+  if(bgPl)bgPl.setStyle({weight:5,opacity:1,dashArray:"8 4"});
   /* show info panel */
   var ip=document.getElementById("infopanel");
   document.getElementById("ip-name").textContent=s.name;
@@ -385,26 +585,41 @@ function expand(s,i){
   ip.style.display="block";
 }
 
-/* Build / rebuild all dot markers */
+/* Build / rebuild all dot markers + always-visible pipeline paths */
 function build(){
+  pipeLayer.clearLayers();
   dotLayer.clearLayers();
   detailLayer.clearLayers();
-  detailCache={};dotCache={};
+  detailCache={};dotCache={};pipeCache={};
   if(expanded)document.getElementById("infopanel").style.display="none";
   expanded=null;
   var mn=parseFloat(document.getElementById("minCap").value);
   var cf=document.getElementById("clsF").value;
+  var cn=document.getElementById("cntF").value;
   var cnt=0;
   SITES.forEach(function(s,i){
     if(s.cap<mn)return;
     if(cf!=="all"&&s.cls!==cf)return;
+    if(cn!=="all"&&s.cty!==cn)return;
     cnt++;
     var col=clsCol(s.cls);
     var midLat=(s.u.lat+s.l.lat)/2;
     var midLng=(s.u.lng+s.l.lng)/2;
-    var r=Math.max(9,Math.min(20,8+Math.sqrt(s.cap)*1.8));
+
+    /* ── Always-visible pipeline path ── */
+    var pl=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
+      {color:col,weight:2.5,dashArray:"7 5",opacity:0.72});
+    pl._site=s;pl._i=i;
+    pl.bindTooltip("<b>"+s.name+"</b> pipeline &bull; "+s.dist+" km &bull; "+s.head+" m head",
+      {className:"hb-tip",sticky:true});
+    pl.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
+    pipeLayer.addLayer(pl);
+    pipeCache[s.id]=pl;
+
+    /* ── Dot marker ── */
+    var r=Math.max(8,Math.min(18,7+Math.sqrt(s.cap)*1.6));
     var dot=L.circleMarker([midLat,midLng],
-      {radius:r,color:col,fillColor:col,fillOpacity:.75,weight:2,opacity:.9});
+      {radius:r,color:"#fff",fillColor:col,fillOpacity:.9,weight:2,opacity:1});
     dot._site=s;dot._r=r;
     dot.bindTooltip(
       "<b>"+s.name+"</b><br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
@@ -428,12 +643,12 @@ window.upd=function(id,val){
   var s=SITES.find(function(x){return x.id===id;});
   if(!s)return;
   var m=metrics(s,cap);
-  var lFixed=!!s.l.fixed;
+  var lFixed=!!s.l.fixed,uFixed=!!s.u.fixed;
   /* update table cells */
   document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
   document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
   document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
-  document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
+  if(!uFixed)document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
   if(!lFixed)document.getElementById("dl-"+id).textContent=m.lh.toFixed(0);
   document.getElementById("ru-"+id).textContent=m.ur.toFixed(2);
   if(!lFixed)document.getElementById("rl-"+id).textContent=m.lr.toFixed(2);
@@ -444,8 +659,10 @@ window.upd=function(id,val){
   /* live resize lake polygons */
   if(expanded===id&&detailCache[id]){
     var grp=detailCache[id];
-    grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
-    grp._upLayer.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+    if(!grp._uFixed){
+      grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
+      grp._upLayer.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+    }
     if(!lFixed){
       grp._loLayer.setLatLngs(resPoly(s.l,s,cap,false));
       grp._loLayer.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
@@ -457,6 +674,9 @@ window.upd=function(id,val){
 window.applyFilters=function(){
   var v=parseFloat(document.getElementById("minCap").value);
   document.getElementById("minCapD").textContent=v.toFixed(1)+" GWh";
+  var cn=document.getElementById("cntF").value;
+  if(cn==="RO")map.flyTo([45.8,24.5],7);
+  else if(cn==="MY")map.flyTo([4.2,109.5],6);
   build();
 };
 
@@ -470,8 +690,8 @@ leg.onAdd=function(){
     "<div class='li'><div class='lc' style='background:#e74c3c'></div><span>AA &mdash; High value</span></div>"+
     "<div class='li'><div class='lc' style='background:#27ae60'></div><span>A &mdash; Viable</span></div>"+
     "<h4 style='margin-top:9px'>WHEN EXPANDED</h4>"+
-    "<div class='li'><div class='ls' style='background:#4db8ff88;border:2px solid #aaa'></div><span>Upper reservoir</span></div>"+
-    "<div class='li'><div class='ls' style='background:#80d4ff66;border:2px solid #aaa'></div><span>Lower reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#2980b9aa;border:2px solid #1a5a8a'></div><span>Upper reservoir</span></div>"+
+    "<div class='li'><div class='ls' style='background:#5dade288;border:2px solid #2a7ab0'></div><span>Lower reservoir</span></div>"+
     "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel</span></div>"+
     "<div style='margin-top:8px;font-size:10px;color:#6c9ab5;border-top:1px solid #1a3a5c;padding-top:6px'>"+
     "Dot size &prop; storage capacity<br>Click dot &rarr; expand pair<br>Click map &rarr; collapse</div>";
@@ -490,5 +710,6 @@ L.Control.geocoder({
   map.fitBounds(e.geocode.bbox,{maxZoom:14,animate:true});
 }).addTo(map);
 </script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 </body>
 </html>

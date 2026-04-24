@@ -318,9 +318,10 @@ function metrics(s,cap){
   var v=vol(cap,s.head);
   var aU=s.u.fixed?s.u.area:scaledArea(s.u.area,s.cap,cap);
   var uh=s.u.fixed?0:dh(v,aU),ur=s.u.fixed?0:rv(uh,s.u.dlen),uwr=ur>0?v/ur:999;
+  var aL=s.l.fixed?s.l.area:scaledArea(s.l.area,s.cap,cap);
   var lh=0,lr=0,lwr=0;
-  if(!s.l.fixed){var aL=scaledArea(s.l.area,s.cap,cap);lh=dh(v,aL);lr=rv(lh,s.l.dlen);lwr=lr>0?v/lr:999;}
-  return{v:v,uh:uh,lh:lh,ur:ur,lr:lr,uwr:uwr,lwr:lwr,
+  if(!s.l.fixed){lh=dh(v,aL);lr=rv(lh,s.l.dlen);lwr=lr>0?v/lr:999;}
+  return{v:v,aU:aU,aL:aL,uh:uh,lh:lh,ur:ur,lr:lr,uwr:uwr,lwr:lwr,
          pw:cap*1000/6,pop:Math.round(cap*850000)};
 }
 
@@ -403,11 +404,15 @@ function pipeHTML(s,capOvr){
   var lrTxt=lFixed?"—":m.lr.toFixed(2);
   var lwTxt=lFixed?"—":m.lwr.toFixed(1);
   var note=s.anuGWh?"<div style='font-size:10px;color:#6c9ab5;margin-bottom:6px'>ANU design: "+s.anuGWh+" GWh / "+s.anuH+" h / "+Math.round(s.anuGWh/s.anuH*1000)+" MW  (slider shows 6 h basis)</div>":"";
-  return"<div class='ph'><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span><h3>"+s.name+"</h3></div>"+
+  var anuMW=s.anuGWh?Math.round(s.anuGWh/s.anuH*1000):null;
+  var lAreaTxt=m.aL.toFixed(2);
+  return"<div class='ph'><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span>"+
+    "<span style='font-size:11px;background:#e8f0f8;color:#1a4a7a;padding:2px 6px;border-radius:3px;font-weight:600;margin-left:4px'>"+s.cty+"</span>"+
+    "<h3>"+s.name+"</h3></div>"+
     "<table class='it'>"+
     "<tr><td>Head</td><td>"+s.head+" m</td></tr>"+
     "<tr><td>Penstock / Tunnel</td><td>"+s.dist+" km</td></tr>"+
-    "<tr><td>Slope</td><td>"+s.slope.toFixed(3)+"</td></tr>"+
+    "<tr><td>Slope (head/dist)</td><td>"+s.slope.toFixed(3)+"</td></tr>"+
     "<tr><td>Upper</td><td>"+s.u.n+"</td></tr>"+
     "<tr><td>Lower</td><td>"+s.l.n+(lFixed?" <em style='color:#6c9ab5'>(existing)</em>":"")+"</td></tr>"+
     "</table>"+note+
@@ -418,6 +423,8 @@ function pipeHTML(s,capOvr){
     "<table class='ct'>"+
       "<thead><tr><th>Parameter</th><th>Upper</th><th>Lower</th></tr></thead>"+
       "<tbody>"+
+        "<tr><td>Elevation (m)</td><td>"+s.u.elev+"</td><td>"+s.l.elev+"</td></tr>"+
+        "<tr><td>Area (km&sup2;)</td><td id='au-"+s.id+"'>"+m.aU.toFixed(2)+"</td><td id='al-"+s.id+"'>"+lAreaTxt+"</td></tr>"+
         "<tr><td>Volume (GL)</td><td id='vu-"+s.id+"'>"+m.v.toFixed(1)+"</td><td id='vl-"+s.id+"'>"+m.v.toFixed(1)+"</td></tr>"+
         "<tr><td>Dam Height (m)</td><td id='du-"+s.id+"'>"+m.uh.toFixed(0)+"</td><td id='dl-"+s.id+"'>"+lhTxt+"</td></tr>"+
         "<tr><td>Rock Vol (GL)</td><td id='ru-"+s.id+"'>"+m.ur.toFixed(2)+"</td><td id='rl-"+s.id+"'>"+lrTxt+"</td></tr>"+
@@ -425,7 +432,7 @@ function pipeHTML(s,capOvr){
       "</tbody>"+
     "</table>"+
     "<div class='os'>"+
-      "<div class='or'><span>Power Output</span><strong id='pw-"+s.id+"'>"+m.pw.toFixed(0)+" MW</strong></div>"+
+      "<div class='or'><span>Power Output</span><strong id='pw-"+s.id+"'>"+(anuMW||m.pw.toFixed(0))+" MW</strong></div>"+
       "<div class='or'><span>Round-trip Efficiency</span><strong>75 %</strong></div>"+
       "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
     "</div>"+
@@ -646,6 +653,8 @@ window.upd=function(id,val){
   var lFixed=!!s.l.fixed,uFixed=!!s.u.fixed;
   /* update table cells */
   document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
+  if(!uFixed)document.getElementById("au-"+id).textContent=m.aU.toFixed(2);
+  if(!lFixed)document.getElementById("al-"+id).textContent=m.aL.toFixed(2);
   document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
   document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
   if(!uFixed)document.getElementById("du-"+id).textContent=m.uh.toFixed(0);

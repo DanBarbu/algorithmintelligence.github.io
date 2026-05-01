@@ -1,0 +1,114 @@
+From 3928a9166fa1bf9d9fd9f50dfa903d76f508abb8 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Fri, 1 May 2026 03:21:38 +0000
+Subject: [PATCH] fix: show reservoir characteristics for mine void sites
+ (Mamut, Kidston, Rosia)
+
+Mine void markers and detail panel were missing pit elevation, area, and
+volume data. Root causes:
+- siteMarkers.js: mine void converter omitted elevation/area/volume fields
+- siteDetailPanel.js: mine void block omitted derived pit fields; detailSite
+  did not forward them; _renderParams had no area/volume rows
+
+Fixes:
+- siteMarkers.js: add elevation, area (derived ha) and volume (GL) to both
+  loadKnownSites and filterKnownSites mine void converters; add bearing_deg
+- siteDetailPanel.js: add derived fields to mine void block; forward through
+  detailSite; add Upper/Lower Pit Area and Volume rows to _renderParams
+---
+ js/map/siteMarkers.js    | 19 ++++++++++++++++++-
+ js/ui/siteDetailPanel.js | 27 ++++++++++++++++++++++++++-
+ 2 files changed, 44 insertions(+), 2 deletions(-)
+
+diff --git a/js/map/siteMarkers.js b/js/map/siteMarkers.js
+index 9d3e691..3205248 100644
+--- a/js/map/siteMarkers.js
++++ b/js/map/siteMarkers.js
+@@ -42,6 +42,14 @@ HB.Markers = {
+             storage_mwh: mv.storage_mwh,
+             head_m: mv.head_m,
+             tunnel_length_m: mv.distance_between_pits_m,
++            bearing_deg: mv.bearing_deg || null,
++            upper_elevation_m: mv.upper_pit_elevation_m || null,
++            lower_elevation_m: mv.lower_pit_elevation_m || null,
++            /* derive area (ha) from pit volume assuming ~80 m avg water depth */
++            upper_area_ha: mv.upper_pit_volume_m3 ? Math.max(1, Math.round(mv.upper_pit_volume_m3 / 80000)) : null,
++            lower_area_ha: mv.lower_pit_volume_m3 ? Math.max(1, Math.round(mv.lower_pit_volume_m3 / 80000)) : null,
++            upper_volume_gl: mv.upper_pit_volume_m3 ? +(mv.upper_pit_volume_m3 / 1e6).toFixed(1) : null,
++            lower_volume_gl: mv.lower_pit_volume_m3 ? +(mv.lower_pit_volume_m3 / 1e6).toFixed(1) : null,
+             description: mv.description,
+             source_url: mv.source_url
+         }))];
+@@ -242,7 +250,16 @@ HB.Markers = {
+             lat: mv.lat, lng: mv.lng, status: mv.status,
+             configuration: 'mine_void',
+             capacity_mw: mv.capacity_mw, storage_mwh: mv.storage_mwh,
+-            head_m: mv.head_m, description: mv.description, source_url: mv.source_url
++            head_m: mv.head_m,
++            tunnel_length_m: mv.distance_between_pits_m,
++            bearing_deg: mv.bearing_deg || null,
++            upper_elevation_m: mv.upper_pit_elevation_m || null,
++            lower_elevation_m: mv.lower_pit_elevation_m || null,
++            upper_area_ha: mv.upper_pit_volume_m3 ? Math.max(1, Math.round(mv.upper_pit_volume_m3 / 80000)) : null,
++            lower_area_ha: mv.lower_pit_volume_m3 ? Math.max(1, Math.round(mv.lower_pit_volume_m3 / 80000)) : null,
++            upper_volume_gl: mv.upper_pit_volume_m3 ? +(mv.upper_pit_volume_m3 / 1e6).toFixed(1) : null,
++            lower_volume_gl: mv.lower_pit_volume_m3 ? +(mv.lower_pit_volume_m3 / 1e6).toFixed(1) : null,
++            description: mv.description, source_url: mv.source_url
+         }))];
+ 
+         allSites.forEach(site => {
+diff --git a/js/ui/siteDetailPanel.js b/js/ui/siteDetailPanel.js
+index 0086f33..e8ba31f 100644
+--- a/js/ui/siteDetailPanel.js
++++ b/js/ui/siteDetailPanel.js
+@@ -67,6 +67,12 @@ HB.UI.siteDetail = {
+                     head_m: mv.head_m,
+                     upper_elevation_m: mv.upper_pit_elevation_m,
+                     lower_elevation_m: mv.lower_pit_elevation_m,
++                    upper_elev_m: mv.upper_pit_elevation_m ?? null,
++                    lower_elev_m: mv.lower_pit_elevation_m ?? null,
++                    upper_area_ha: mv.upper_pit_volume_m3 ? Math.max(1, Math.round(mv.upper_pit_volume_m3 / 80000)) : null,
++                    lower_area_ha: mv.lower_pit_volume_m3 ? Math.max(1, Math.round(mv.lower_pit_volume_m3 / 80000)) : null,
++                    upper_volume_gl: mv.upper_pit_volume_m3 ? +(mv.upper_pit_volume_m3 / 1e6).toFixed(1) : null,
++                    lower_volume_gl: mv.lower_pit_volume_m3 ? +(mv.lower_pit_volume_m3 / 1e6).toFixed(1) : null,
+                     tunnel_length_m: mv.distance_between_pits_m,
+                     description: mv.description, source_url: mv.source_url
+                 };
+@@ -128,7 +134,14 @@ HB.UI.siteDetail = {
+             dam_volume_mm3: site.anu_dam_volume_mm3 || site.dam_volume_mm3,
+             reservoir_area_ha: site.anu_reservoir_area_ha || site.reservoir_area_ha,
+             separation_km: site.separation_km || site.anu_separation_km,
+-            capacity_mw: site.capacity_mw
++            capacity_mw: site.capacity_mw,
++            // Reservoir characteristics forwarded for display and rendering
++            upper_elev_m: site.upper_elev_m ?? site.upper_elevation_m ?? null,
++            lower_elev_m: site.lower_elev_m ?? site.lower_elevation_m ?? null,
++            upper_area_ha: site.upper_area_ha ?? null,
++            lower_area_ha: site.lower_area_ha ?? null,
++            upper_volume_gl: site.upper_volume_gl ?? null,
++            lower_volume_gl: site.lower_volume_gl ?? null,
+         };
+ 
+         this.show(detailSite);
+@@ -156,6 +169,18 @@ HB.UI.siteDetail = {
+                 `${(site.energyKWh / site.powerKW).toFixed(1)} hours` : '--'],
+         ];
+ 
++        // Reservoir area and volume (mine void pits)
++        if (site.configuration === 'mine_void') {
++            if (site.upper_area_ha != null)
++                params.push(['Upper Pit Area', `${site.upper_area_ha.toLocaleString()} ha`]);
++            if (site.lower_area_ha != null)
++                params.push(['Lower Pit Area', `${site.lower_area_ha.toLocaleString()} ha`]);
++            if (site.upper_volume_gl != null)
++                params.push(['Upper Pit Volume', `${site.upper_volume_gl} GL`]);
++            if (site.lower_volume_gl != null)
++                params.push(['Lower Pit Volume', `${site.lower_volume_gl} GL`]);
++        }
++
+         if (site.costResult?.engineering) {
+             const eng = site.costResult.engineering;
+             params.push(
+-- 
+2.43.0
+

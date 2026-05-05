@@ -1,0 +1,19 @@
+{
+  "login": {
+    "title": "Platforma WILL",
+    "subtitle": "Comandă și Control",
+    "username": "Utilizator",
+    "password": "Parolă",
+    "submit": "Autentificare",
+    "error": "Credențiale invalide"
+  },
+  "map": {
+    "classification": "NECLASIFICAT",
+    "trackLabel": "SIM-GPS-01",
+    "connecting": "Se conectează…",
+    "connected": "Live"
+  },
+  "lang": {
+    "toggle": "EN"
+  }
+}

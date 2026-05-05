@@ -1,0 +1,19 @@
+{
+  "login": {
+    "title": "WILL Platform",
+    "subtitle": "Command & Control",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign In",
+    "error": "Invalid credentials"
+  },
+  "map": {
+    "classification": "UNCLASSIFIED",
+    "trackLabel": "SIM-GPS-01",
+    "connecting": "Connecting…",
+    "connected": "Live"
+  },
+  "lang": {
+    "toggle": "RO"
+  }
+}

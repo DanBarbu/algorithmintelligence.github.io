@@ -1,0 +1,130 @@
+version: "3.9"
+# WILL Platform – Sprint 0 development stack
+# Usage: docker compose up --build
+# All containers should report healthy in < 60 s (S0-01)
+
+services:
+
+  # ── PostgreSQL 16 + PostGIS 3.4 ──────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: will_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       will_core
+      POSTGRES_USER:     will
+      POSTGRES_PASSWORD: will_secret
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./core/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U will -d will_core"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5432:5432"
+
+  # ── EMQX 5 message bus ───────────────────────────────────────────────────
+  emqx:
+    image: emqx/emqx:5.6.0
+    container_name: will_emqx
+    restart: unless-stopped
+    environment:
+      EMQX_NAME: will_emqx
+      EMQX_HOST: 127.0.0.1
+    volumes:
+      - emqx_data:/opt/emqx/data
+    ports:
+      - "1883:1883"    # MQTT/TCP
+      - "8083:8083"    # MQTT/WebSocket
+      - "18083:18083"  # EMQX dashboard (admin:public)
+    healthcheck:
+      test: ["CMD", "emqx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # ── Mythic C2 core ────────────────────────────────────────────────────────
+  # S0-02: Mythic UI reachable at https://localhost:7443
+  mythic:
+    image: ghcr.io/its-a-feature/mythic:v3.3.1
+    container_name: will_mythic
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    environment:
+      MYTHIC_ADMIN_USER:     will_admin
+      MYTHIC_ADMIN_PASSWORD: Will@Sprint0!
+      POSTGRES_HOST:         db
+      POSTGRES_DB:           will_core
+      POSTGRES_USER:         will
+      POSTGRES_PASSWORD:     will_secret
+    ports:
+      - "7443:7443"
+    volumes:
+      - mythic_data:/mythic/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk https://localhost:7443/health | grep -q ok || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 30s
+
+  # ── Simulated GPS plugin ──────────────────────────────────────────────────
+  # S0-04: Publishes lat/lon at 1 Hz on telemetry/gps/sim01
+  gps-sim:
+    build: ./plugins/gps-sim
+    container_name: will_gps_sim
+    restart: unless-stopped
+    depends_on:
+      emqx:
+        condition: service_healthy
+    environment:
+      EMQX_HOST: emqx
+      EMQX_PORT: "1883"
+      TOPIC:     telemetry/gps/sim01
+      HZ:        "1"
+
+  # ── WebSocket bridge ─────────────────────────────────────────────────────
+  # S0-05: Subscribes EMQX → emits JSON on ws://localhost:7000/tracks
+  ws-bridge:
+    build: ./core/ws-bridge
+    container_name: will_ws_bridge
+    restart: unless-stopped
+    depends_on:
+      emqx:
+        condition: service_healthy
+    environment:
+      EMQX_URL:    tcp://emqx:1883
+      LISTEN_ADDR: ":7000"
+    ports:
+      - "7000:7000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  # ── Frontend (React 18 + CesiumJS + i18n) ────────────────────────────────
+  # S0-06: Moving APP-6D icon on CesiumJS globe
+  # S0-07: Bilingual RO/EN login
+  frontend:
+    build: ./frontend
+    container_name: will_frontend
+    restart: unless-stopped
+    depends_on:
+      - ws-bridge
+    environment:
+      VITE_WS_URL:       ws://localhost:7000/tracks
+      VITE_CESIUM_TOKEN: ""
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:
+  emqx_data:
+  mythic_data:

@@ -402,12 +402,11 @@ async def run_pipeline(
         log.info("pipeline.step", step=6, name="nodef1_export")
         from src.nato.nodef1_exporter import Nodef1Exporter
 
-        nodef1_exporter = Nodef1Exporter(output_dir=settings.data_output_dir)
+        nodef1_exporter = Nodef1Exporter()
         nodef1_export = nodef1_exporter.export(
-            drift=drift_result,
-            ramp_alerts=ramp_alerts,
-            cvi_alerts=cvi_alerts,
+            dataset_path=dataset_path or "",
             run_id=run_id,
+            output_dir=settings.data_output_dir,
         )
         log.info("pipeline.nodef1_done", record_count=nodef1_export.record_count)
 
@@ -415,13 +414,13 @@ async def run_pipeline(
         log.info("pipeline.step", step=6, name="app6_export")
         from src.nato.app6_symbology import App6Symbology
 
-        app6_exporter = App6Symbology(output_dir=settings.data_output_dir)
+        app6_exporter = App6Symbology()
         app6_export = app6_exporter.export(
             drift=drift_result,
-            assets=assets,
             ramp_alerts=ramp_alerts,
             cvi_alerts=cvi_alerts,
             run_id=run_id,
+            output_dir=settings.data_output_dir,
         )
         log.info("pipeline.app6_done", feature_count=app6_export.feature_count)
 

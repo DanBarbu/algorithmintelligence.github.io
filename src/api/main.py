@@ -5,14 +5,10 @@ Auto-generated OpenAPI docs available at /docs.
 """
 from __future__ import annotations
 
-import asyncio
-import json
-from pathlib import Path
 from typing import Any
 
 import structlog
 from fastapi import BackgroundTasks, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 
 from src.api.routers import drift, nato, wesf
 from src.api.schemas import PipelineRunSummary

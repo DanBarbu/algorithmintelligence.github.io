@@ -1,8 +1,6 @@
 """Lagrangian drift trajectory API endpoints."""
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 
 import structlog
@@ -40,7 +38,6 @@ async def _run_drift_bg(
     try:
         from src.core.pipeline import run_pipeline
 
-        settings = get_settings()
         await run_pipeline(
             origin=tuple(origin),  # type: ignore[arg-type]
             bounding_box=[
@@ -121,7 +118,7 @@ async def get_drift_geojson(run_id: str) -> JSONResponse:
 )
 async def trigger_drift_run(
     background_tasks: BackgroundTasks,
-    origin: list[float] = Body(..., examples={"default": {"value": [14.5, 36.8]}}),
+    origin: list[float] = Body(..., openapi_examples={"default": {"summary": "Mediterranean", "value": [14.5, 36.8]}}),
     leeway_pct: float = Body(default=2.5, ge=1.0, le=5.0),
     seed: int = Body(default=42),
 ) -> dict[str, Any]:

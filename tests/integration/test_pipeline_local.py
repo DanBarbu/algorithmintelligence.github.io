@@ -6,14 +6,11 @@ No internet access required.
 from __future__ import annotations
 
 import asyncio
-import json
-import time
 from pathlib import Path
 
 import pytest
 
 from src.api.schemas import PipelineRunSummary
-
 
 # ── Shared pipeline parameters ────────────────────────────────────────────────
 
@@ -33,7 +30,7 @@ def pipeline_summary(tmp_path_factory) -> PipelineRunSummary:
     """
     import os
 
-    from src.core.config import Settings, get_settings
+    from src.core.config import get_settings
     from src.core.pipeline import run_pipeline
 
     # Override settings for this integration test
@@ -91,10 +88,14 @@ class TestPipelineOutputFiles:
 
     def test_pipeline_produces_summary_json(self, pipeline_summary: PipelineRunSummary) -> None:
         """Assert the pipeline summary JSON file exists on disk."""
-        from src.core.config import get_settings
+        # Derive output dir from a stored export path to avoid settings cache issues
+        if pipeline_summary.metgm_export:
+            output_dir = Path(pipeline_summary.metgm_export.xml_path).parent
+        else:
+            from src.core.config import get_settings
+            output_dir = get_settings().data_output_dir
 
-        settings = get_settings()
-        summary_path = settings.data_output_dir / f"{pipeline_summary.run_id}_summary.json"
+        summary_path = output_dir / f"{pipeline_summary.run_id}_summary.json"
         assert summary_path.exists(), f"Summary JSON not found: {summary_path}"
         assert summary_path.stat().st_size > 0
 
@@ -122,23 +123,23 @@ class TestPipelineOutputFiles:
 
     def test_pipeline_produces_all_output_files(self, pipeline_summary: PipelineRunSummary) -> None:
         """Assert summary, METGM, NODEF-1, and APP-6 files all exist in a single test."""
-        from src.core.config import get_settings
-
-        settings = get_settings()
         run_id = pipeline_summary.run_id
+        expected: list[Path] = []
 
-        expected = [
-            settings.data_output_dir / f"{run_id}_summary.json",
-        ]
         if pipeline_summary.metgm_export:
-            expected.append(Path(pipeline_summary.metgm_export.xml_path))
+            xml_path = Path(pipeline_summary.metgm_export.xml_path)
+            expected.append(xml_path)
+            # Summary is in the same directory as the METGM XML
+            expected.append(xml_path.parent / f"{run_id}_summary.json")
+
         if pipeline_summary.nodef1_export:
             expected.append(Path(pipeline_summary.nodef1_export.binary_path))
         if pipeline_summary.app6_export:
             expected.append(Path(pipeline_summary.app6_export.geojson_path))
 
+        assert expected, "No export paths found in summary to check"
         missing = [str(p) for p in expected if not p.exists()]
-        assert not missing, f"Missing output files:\n" + "\n".join(missing)
+        assert not missing, "Missing output files:\n" + "\n".join(missing)
 
 
 class TestPipelineDeterminism:
@@ -192,12 +193,29 @@ class TestPipelineSummarySchema:
     """Assert the summary JSON is valid and parseable to PipelineRunSummary."""
 
     def test_pipeline_summary_json_parseable(self, pipeline_summary: PipelineRunSummary) -> None:
-        """Assert the written summary JSON parses back to a PipelineRunSummary."""
-        from src.core.config import get_settings
+        """Assert the written summary JSON parses back to a PipelineRunSummary.
 
-        settings = get_settings()
-        summary_path = settings.data_output_dir / f"{pipeline_summary.run_id}_summary.json"
+        Derive the output directory from an export path embedded in the summary
+        so this test is independent of the settings singleton state (which may
+        have been mutated by test_pipeline_deterministic).
+        """
+        run_id = pipeline_summary.run_id
 
+        # Find the output directory from one of the embedded export paths
+        output_dir: Path | None = None
+        if pipeline_summary.metgm_export:
+            output_dir = Path(pipeline_summary.metgm_export.xml_path).parent
+        elif pipeline_summary.nodef1_export:
+            output_dir = Path(pipeline_summary.nodef1_export.binary_path).parent
+        elif pipeline_summary.app6_export:
+            output_dir = Path(pipeline_summary.app6_export.geojson_path).parent
+        else:
+            # Last resort: use the settings singleton
+            from src.core.config import get_settings
+            output_dir = get_settings().data_output_dir
+
+        assert output_dir is not None
+        summary_path = output_dir / f"{run_id}_summary.json"
         assert summary_path.exists(), f"Summary file missing: {summary_path}"
 
         raw_json = summary_path.read_text(encoding="utf-8")

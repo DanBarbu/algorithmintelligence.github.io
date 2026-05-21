@@ -16,19 +16,15 @@ from __future__ import annotations
 import argparse
 import asyncio
 import datetime
-import json
 import time
 import uuid
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import structlog
 import xarray as xr
 
 from src.api.schemas import (
-    AlertSeverity,
-    AlertType,
     App6ExportResult,
     AssetLocation,
     CVIAlert,
@@ -37,7 +33,6 @@ from src.api.schemas import (
     MarketID,
     MetgmExportResult,
     Nodef1ExportResult,
-    ParticleTrack,
     PipelineRunSummary,
     PriceForecast,
     RampAlertPayload,
@@ -145,7 +140,7 @@ def _default_assets() -> list[AssetLocation]:
 def _synthetic_price_forecast(run_id: str, seed: int) -> PriceForecast:
     """Generate a synthetic 24-h price forecast for testing."""
     rng = np.random.default_rng(seed)
-    now = datetime.datetime.now(tz=datetime.timezone.utc).replace(minute=0, second=0, microsecond=0)
+    now = datetime.datetime.now(tz=datetime.UTC).replace(minute=0, second=0, microsecond=0)
     intervals = [now + datetime.timedelta(hours=i) for i in range(24)]
     prices = rng.normal(50.0, 15.0, 24).tolist()
     neg_flags = [p < 0 for p in prices]
@@ -195,7 +190,7 @@ async def run_pipeline(
     configure_logging(settings.log_level)
 
     run_id = str(uuid.uuid4())
-    started_at = datetime.datetime.now(tz=datetime.timezone.utc)
+    started_at = datetime.datetime.now(tz=datetime.UTC)
     t_start = time.perf_counter()
 
     log = logger.bind(run_id=run_id, seed=seed)
@@ -222,7 +217,7 @@ async def run_pipeline(
     res = settings.target_grid_resolution_deg
     lat_arr = np.arange(lat_min, lat_max + 1e-9, res)
     lon_arr = np.arange(lon_min, lon_max + 1e-9, res)
-    now_utc = datetime.datetime.now(tz=datetime.timezone.utc).replace(minute=0, second=0, microsecond=0)
+    now_utc = datetime.datetime.now(tz=datetime.UTC).replace(minute=0, second=0, microsecond=0)
     times = [now_utc + datetime.timedelta(hours=i) for i in range(_SYNTHETIC_TIMESTEPS)]
 
     try:
@@ -243,8 +238,8 @@ async def run_pipeline(
         else:
             # Try live ingestion clients with graceful fallback
             try:
-                from src.ingestion.aifs_client import AIFSClient  # type: ignore[import]
-                from src.ingestion.cmems_client import CMEMSClient  # type: ignore[import]
+                from src.ingestion.aifs_client import AIFSClient  # noqa: F401
+                from src.ingestion.cmems_client import CMEMSClient  # noqa: F401
                 log.debug("pipeline.live_clients_found")
             except ImportError as exc:
                 log.warning("pipeline.live_clients_missing", error=str(exc))
@@ -256,7 +251,7 @@ async def run_pipeline(
         if dataset_path and Path(dataset_path).exists():
             try:
                 from src.ingestion.grid_harmonizer import GridHarmonizer
-                harmonizer = GridHarmonizer()
+                GridHarmonizer()  # imported for availability check
                 # Attempt harmonization only if both atmo+ocean paths exist
                 # (dataset_path may already be merged — load directly)
                 merged_ds = xr.open_dataset(dataset_path, engine="netcdf4")
@@ -432,7 +427,7 @@ async def run_pipeline(
         success = False
 
     # ── Step 7: Write PipelineRunSummary ──────────────────────────────────────
-    completed_at = datetime.datetime.now(tz=datetime.timezone.utc)
+    completed_at = datetime.datetime.now(tz=datetime.UTC)
     duration_seconds = time.perf_counter() - t_start
 
     summary = PipelineRunSummary(

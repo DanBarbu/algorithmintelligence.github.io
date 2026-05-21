@@ -28,6 +28,7 @@ def configure_logging(level: str = "INFO", *, pretty: bool = False) -> None:
         structlog.processors.StackInfoRenderer(),
     ]
 
+    renderer: structlog.types.Processor
     if pretty:
         renderer = structlog.dev.ConsoleRenderer(colors=True)
     else:

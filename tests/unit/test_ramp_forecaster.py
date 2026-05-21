@@ -5,7 +5,7 @@ All tests use synthetic 3×3 numpy grids — no real data, no I/O.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 import pytest
@@ -22,7 +22,7 @@ LAT_GRID = np.array([49.0, 50.0, 51.0])
 LON_GRID = np.array([9.0, 10.0, 11.0])
 
 # One timestamp
-TS_0 = datetime(2026, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
+TS_0 = datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC)
 TIMESTAMPS = [TS_0]
 
 # Asset at the centre of the grid (exact grid point — interpolation trivial)
@@ -328,9 +328,9 @@ class TestInterpolation:
     def test_multiple_timestamps_generate_multiple_alerts(self):
         """3 timestamps with cut-out wind → 3 separate alerts."""
         ts_list = [
-            datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
-            datetime(2026, 1, 15, 11, 0, 0, tzinfo=timezone.utc),
-            datetime(2026, 1, 15, 12, 0, 0, tzinfo=timezone.utc),
+            datetime(2026, 1, 15, 10, 0, 0, tzinfo=UTC),
+            datetime(2026, 1, 15, 11, 0, 0, tzinfo=UTC),
+            datetime(2026, 1, 15, 12, 0, 0, tzinfo=UTC),
         ]
         u10 = np.full((3, 3, 3), 26.0)
         v10 = np.zeros((3, 3, 3))

@@ -14,7 +14,6 @@ import structlog
 from shapely.geometry import MultiPoint, mapping
 
 from src.api.schemas import DriftCorridorResult, ParticleTrack
-from src.core.config import get_settings
 
 logger = structlog.get_logger(__name__)
 
@@ -74,7 +73,6 @@ class DriftCorridor:
         -------
         DriftCorridorResult
         """
-        settings = get_settings()
         if run_id is None:
             run_id = str(uuid.uuid4())
 

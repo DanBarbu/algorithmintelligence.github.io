@@ -11,11 +11,9 @@ import xarray as xr
 from src.api.schemas import (
     AssetLocation,
     DriftCorridorResult,
-    IngestResult,
     ParticleTrack,
 )
-from src.core.config import Settings, get_settings
-
+from src.core.config import Settings
 
 # ── Settings fixture ──────────────────────────────────────────────────────────
 
@@ -64,7 +62,7 @@ def synthetic_atmo_dataset(tmp_path: Path) -> Path:
     rng = np.random.default_rng(42)
     lat = np.linspace(30.0, 40.0, 5)
     lon = np.linspace(10.0, 20.0, 5)
-    now = datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+    now = datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC)
     times = np.array(
         [np.datetime64(now + datetime.timedelta(hours=i)) for i in range(24)]
     )
@@ -103,7 +101,7 @@ def synthetic_ocean_dataset(tmp_path: Path) -> Path:
     rng = np.random.default_rng(43)
     lat = np.linspace(30.0, 40.0, 5)
     lon = np.linspace(10.0, 20.0, 5)
-    now = datetime.datetime(2024, 1, 1, tzinfo=datetime.timezone.utc)
+    now = datetime.datetime(2024, 1, 1, tzinfo=datetime.UTC)
     times = np.array(
         [np.datetime64(now + datetime.timedelta(hours=i)) for i in range(24)]
     )

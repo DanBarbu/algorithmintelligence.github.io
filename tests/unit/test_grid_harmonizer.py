@@ -11,7 +11,6 @@ import xarray as xr
 
 from src.ingestion.grid_harmonizer import GridHarmonizer, GridMismatchError
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

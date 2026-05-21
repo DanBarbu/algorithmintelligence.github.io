@@ -6,18 +6,18 @@ and attack-surface window duration.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from src.api.schemas import AlertSeverity, AssetLocation
-from src.wesf.cvi_engine import CVIEngine, _ATTACK_WINDOW_HOURS
+from src.wesf.cvi_engine import _ATTACK_WINDOW_HOURS, CVIEngine
 
 # ---------------------------------------------------------------------------
 # Shared fixtures / constants
 # ---------------------------------------------------------------------------
 
-EVENT_TIME = datetime(2026, 1, 15, 14, 0, 0, tzinfo=timezone.utc)
+EVENT_TIME = datetime(2026, 1, 15, 14, 0, 0, tzinfo=UTC)
 
 INVERTER_ASSET = AssetLocation(
     asset_id="INV-007",

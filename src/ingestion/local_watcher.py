@@ -10,7 +10,7 @@ import asyncio
 from pathlib import Path
 
 import structlog
-from watchfiles import awatch, Change  # type: ignore[import-untyped]  # noqa: F401
+from watchfiles import Change, awatch  # type: ignore[import-untyped]  # noqa: F401
 
 from src.core.config import get_settings
 

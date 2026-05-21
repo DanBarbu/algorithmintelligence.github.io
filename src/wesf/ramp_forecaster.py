@@ -11,7 +11,7 @@ Physical models:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -34,7 +34,9 @@ logger = structlog.get_logger(__name__)
 # Bilinear interpolation (optional scipy fast path, pure-numpy fallback)
 # ---------------------------------------------------------------------------
 try:
-    from scipy.interpolate import RegularGridInterpolator as _RGI  # type: ignore
+    from scipy.interpolate import (
+        RegularGridInterpolator as _RegularGridInterpolator,  # type: ignore[import-untyped]
+    )
 
     _SCIPY_AVAILABLE = True
     logger.debug("scipy.interpolate available — using RegularGridInterpolator")
@@ -145,7 +147,7 @@ class RampForecaster:
         for asset in self.assets:
             for t_idx, ts in enumerate(timestamps):
                 # Ensure timestamp is UTC-aware
-                ts_utc = ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
+                ts_utc = ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
 
                 wind_speed = self._interpolate_to_asset(
                     np.sqrt(u10[t_idx] ** 2 + v10[t_idx] ** 2),
@@ -257,7 +259,7 @@ class RampForecaster:
         asset_lon = float(np.clip(asset_lon, lon_grid.min(), lon_grid.max()))
 
         if _SCIPY_AVAILABLE:
-            interp = _RGI(
+            interp = _RegularGridInterpolator(
                 (lat_grid, lon_grid),
                 field,
                 method="linear",

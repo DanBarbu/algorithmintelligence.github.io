@@ -3,15 +3,11 @@ Unit tests for src.lagrangian.drift_corridor.DriftCorridor.
 """
 from __future__ import annotations
 
-import math
-
 import numpy as np
-import pytest
 
 from src.api.schemas import DriftCorridorResult, ParticleTrack
 from src.lagrangian.drift_corridor import DriftCorridor
 from src.lagrangian.monte_carlo import MonteCarloEnsemble
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -237,7 +237,6 @@ class MetgmCompiler:
 
         lat = ds.coords.get("lat") if "lat" in ds.coords else ds.coords.get("latitude")
         lon = ds.coords.get("lon") if "lon" in ds.coords else ds.coords.get("longitude")
-        time = ds.coords.get("time")
 
         if lat is None or lon is None:
             raise ValueError("Dataset must have 'lat'/'latitude' and 'lon'/'longitude' coordinates.")
@@ -252,7 +251,6 @@ class MetgmCompiler:
         dlat = float(lat_vals[1] - lat_vals[0]) if nlat > 1 else 0.25
         dlon = float(lon_vals[1] - lon_vals[0]) if nlon > 1 else 0.25
 
-        nt = len(time.values) if time is not None else 1
 
         for var_name, (p_id, param_name, unit) in _PARAM_MAP.items():
             if var_name not in ds:
@@ -303,9 +301,9 @@ class MetgmCompiler:
             t0 = time_coord.values[0]
             # Convert numpy datetime64 → Python datetime
             ts = (t0 - np.datetime64("1970-01-01T00:00:00")) / np.timedelta64(1, "s")
-            dt = datetime.fromtimestamp(float(ts), tz=timezone.utc)
+            dt = datetime.fromtimestamp(float(ts), tz=UTC)
             return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-        return datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def _build_xml(
         self,

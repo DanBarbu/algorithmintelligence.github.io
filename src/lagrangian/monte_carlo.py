@@ -10,7 +10,6 @@ Default noise parameters (from PRD):
 from __future__ import annotations
 
 import math
-from typing import Sequence
 
 import numpy as np
 import structlog

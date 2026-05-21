@@ -3,14 +3,11 @@ Unit tests for src.lagrangian.monte_carlo.MonteCarloEnsemble.
 """
 from __future__ import annotations
 
-import math
-
 import numpy as np
 import pytest
 
 from src.api.schemas import ParticleTrack
 from src.lagrangian.monte_carlo import MonteCarloEnsemble
-
 
 # ── Shared fixtures & helpers ─────────────────────────────────────────────────
 

@@ -7,9 +7,6 @@ are installed, as long as the module is importable.
 """
 from __future__ import annotations
 
-import importlib
-import sys
-
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -17,14 +14,14 @@ import pytest
 # ---------------------------------------------------------------------------
 
 try:
-    import numpy as np  # type: ignore
+    import numpy as np  # noqa: F401
 
     _NUMPY = True
 except ImportError:
     _NUMPY = False
 
 try:
-    import pandas as pd  # type: ignore
+    import pandas as pd  # noqa: F401
 
     _PANDAS = True
 except ImportError:
@@ -41,7 +38,6 @@ requires_numpy_pandas = pytest.mark.skipif(
 # ---------------------------------------------------------------------------
 
 from src.wesf.price_model import ElectricityPriceModel, _synthetic_price_series  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Synthetic series tests
@@ -101,7 +97,6 @@ class TestSyntheticSeries:
     @requires_numpy_pandas
     def test_synthetic_series_is_utc(self):
         """DatetimeIndex is UTC-aware."""
-        import pandas as pd
 
         series = _synthetic_price_series(n_hours=24, seed=42)
         assert series.index.tz is not None, "Expected UTC-aware DatetimeIndex"

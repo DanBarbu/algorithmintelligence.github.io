@@ -15,7 +15,6 @@ import xarray as xr
 
 from src.nato.nodef1_exporter import Nodef1Exporter
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture()

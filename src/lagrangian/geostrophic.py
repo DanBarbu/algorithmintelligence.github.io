@@ -109,8 +109,8 @@ class GeostrophicCorrector:
         # ── SSH spatial gradients ─────────────────────────────────────────────
         # np.gradient returns [dSSH/drow, dSSH/dcol] in SSH units per index unit;
         # we divide by grid spacing to get dSSH/dy and dSSH/dx in m/m (dimensionless).
-        dSSH_dy = np.gradient(ssh, axis=0) / dy_m   # dSSH/dy
-        dSSH_dx = np.gradient(ssh, axis=1) / dx_m   # dSSH/dx
+        d_ssh_dy = np.gradient(ssh, axis=0) / dy_m   # dSSH/dy
+        d_ssh_dx = np.gradient(ssh, axis=1) / dx_m   # dSSH/dx
 
         # ── Coriolis parameter ────────────────────────────────────────────────
         f = 2.0 * _OMEGA * np.sin(lat_rad)
@@ -118,8 +118,8 @@ class GeostrophicCorrector:
         # ── Geostrophic velocities ────────────────────────────────────────────
         # Avoid division by near-zero f (equatorial guard applied after)
         safe_f = np.where(np.abs(f) < 1e-10, np.nan, f)
-        u_geo = -(_GRAVITY / safe_f) * dSSH_dy
-        v_geo = +(_GRAVITY / safe_f) * dSSH_dx
+        u_geo = -(_GRAVITY / safe_f) * d_ssh_dy
+        v_geo = +(_GRAVITY / safe_f) * d_ssh_dx
 
         # Replace NaN from safe_f with 0
         u_geo = np.where(np.isnan(u_geo), 0.0, u_geo)

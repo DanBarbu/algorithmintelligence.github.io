@@ -12,29 +12,28 @@ Design principles:
 from __future__ import annotations
 
 import datetime
-from enum import Enum
-from typing import Any, Optional
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-
 # ── Enumerations ─────────────────────────────────────────────────────────────
 
-class AlertSeverity(str, Enum):
+class AlertSeverity(StrEnum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
 
-class AlertType(str, Enum):
+class AlertType(StrEnum):
     TURBINE_CUTOUT = "TURBINE_CUTOUT"
     SOLAR_DROP = "SOLAR_DROP"
     NEGATIVE_PRICE = "NEGATIVE_PRICE"
     CVI_THRESHOLD = "CVI_THRESHOLD"
 
 
-class MarketID(str, Enum):
+class MarketID(StrEnum):
     EPEX_DE = "EPEX_DE"
     EPEX_FR = "EPEX_FR"
     EPEX_GB = "EPEX_GB"
@@ -152,7 +151,7 @@ class AssetLocation(BaseModel):
     lon: float = Field(..., ge=-180, le=180)
     lat: float = Field(..., ge=-90, le=90)
     asset_type: str = Field(default="WIND_TURBINE", description="WIND_TURBINE | SOLAR_PV | INVERTER")
-    rated_mw: Optional[float] = None
+    rated_mw: float | None = None
 
 
 class RampAlertPayload(BaseModel):
@@ -174,7 +173,7 @@ class RampAlertPayload(BaseModel):
     unit: str = Field(..., description="Physical unit of trigger_value (e.g. 'm/s', 'oktas').")
     time_window_start: datetime.datetime
     time_window_end: datetime.datetime
-    estimated_mw_loss: Optional[float] = Field(
+    estimated_mw_loss: float | None = Field(
         None,
         description="Estimated generation loss in MW.",
     )
@@ -184,7 +183,7 @@ class RampAlertPayload(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_time_window(self) -> "RampAlertPayload":
+    def validate_time_window(self) -> RampAlertPayload:
         if self.time_window_end <= self.time_window_start:
             raise ValueError("time_window_end must be after time_window_start")
         return self
@@ -233,11 +232,11 @@ class PriceForecast(BaseModel):
         ...,
         description="True where price is predicted to be negative.",
     )
-    model_mae: Optional[float] = Field(None, description="Model MAE on validation set (€/MWh).")
+    model_mae: float | None = Field(None, description="Model MAE on validation set (€/MWh).")
     model_name: str = Field(default="N-BEATS")
 
     @model_validator(mode="after")
-    def validate_length_consistency(self) -> "PriceForecast":
+    def validate_length_consistency(self) -> PriceForecast:
         n = len(self.forecast_intervals)
         if len(self.forecast_prices_eur_mwh) != n:
             raise ValueError("forecast_prices_eur_mwh length must match forecast_intervals")
@@ -314,16 +313,16 @@ class PipelineRunSummary(BaseModel):
     completed_at: datetime.datetime
     duration_seconds: float
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
-    ingest: Optional[IngestResult] = None
-    drift: Optional[DriftCorridorResult] = None
+    ingest: IngestResult | None = None
+    drift: DriftCorridorResult | None = None
     ramp_alerts: list[RampAlertPayload] = Field(default_factory=list)
     cvi_alerts: list[CVIAlert] = Field(default_factory=list)
-    price_forecast: Optional[PriceForecast] = None
-    metgm_export: Optional[MetgmExportResult] = None
-    nodef1_export: Optional[Nodef1ExportResult] = None
-    app6_export: Optional[App6ExportResult] = None
+    price_forecast: PriceForecast | None = None
+    metgm_export: MetgmExportResult | None = None
+    nodef1_export: Nodef1ExportResult | None = None
+    app6_export: App6ExportResult | None = None
 
     @property
     def under_three_minutes(self) -> bool:

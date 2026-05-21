@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=70", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "metoc-lagrangian"
@@ -85,7 +85,7 @@ skip_covered = false
 python_version = "3.11"
 strict = false
 ignore_missing_imports = true
-warn_unused_ignores = true
+warn_unused_ignores = false  # optional deps may/may not be installed in CI
 
 [tool.ruff]
 line-length = 100

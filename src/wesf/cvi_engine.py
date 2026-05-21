@@ -14,7 +14,7 @@ CVI = w1*Weather + w2*Exposure + w3*Stress + w4*Visibility
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import structlog
@@ -150,9 +150,9 @@ class CVIEngine:
         )
 
         # ── Attack-surface window ────────────────────────────────────────────
-        now = event_time or datetime.now(tz=timezone.utc)
+        now = event_time or datetime.now(tz=UTC)
         if now.tzinfo is None:
-            now = now.replace(tzinfo=timezone.utc)
+            now = now.replace(tzinfo=UTC)
 
         window_start = now
         window_end = now + timedelta(hours=_ATTACK_WINDOW_HOURS)

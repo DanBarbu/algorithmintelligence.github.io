@@ -22,14 +22,12 @@ from src.api.schemas import (
     RampAlertPayload,
 )
 from src.nato.app6_symbology import (
-    App6Symbology,
     _SIDC_CBRN_HAZARD,
     _SIDC_DRIFT_CORRIDOR,
     _SIDC_DRIFT_ORIGIN,
     _SIDC_HAZARD_AREA,
-    _SIDC_INFRA_MARKER,
+    App6Symbology,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -72,7 +70,7 @@ def drift_result() -> DriftCorridorResult:
 @pytest.fixture()
 def turbine_alert() -> RampAlertPayload:
     """Synthetic TURBINE_CUTOUT ramp alert."""
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
     return RampAlertPayload(
         run_id="ramp-run-001",
         ingest_run_id="ingest-001",
@@ -97,7 +95,7 @@ def turbine_alert() -> RampAlertPayload:
 @pytest.fixture()
 def solar_alert() -> RampAlertPayload:
     """Synthetic SOLAR_DROP ramp alert."""
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
     return RampAlertPayload(
         run_id="ramp-run-002",
         ingest_run_id="ingest-001",
@@ -121,7 +119,7 @@ def solar_alert() -> RampAlertPayload:
 @pytest.fixture()
 def cvi_critical() -> CVIAlert:
     """Synthetic CRITICAL-severity CVIAlert."""
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
     return CVIAlert(
         run_id="cvi-run-001",
         ingest_run_id="ingest-001",
@@ -144,7 +142,7 @@ def cvi_critical() -> CVIAlert:
 @pytest.fixture()
 def cvi_high() -> CVIAlert:
     """Synthetic HIGH-severity CVIAlert."""
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = datetime.datetime.now(tz=datetime.UTC)
     return CVIAlert(
         run_id="cvi-run-002",
         ingest_run_id="ingest-001",

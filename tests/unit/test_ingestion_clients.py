@@ -15,7 +15,6 @@ from src.ingestion.cmems_client import CMEMSClient, CMEMSClientError
 from src.ingestion.graphcast_client import GraphCastClient, GraphCastClientError
 from src.ingestion.local_watcher import LocalWatcher
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -439,7 +438,7 @@ class TestIngestResultSchemaCompat:
 
         ir = IngestResult(
             run_id=str(uuid.uuid4()),
-            timestamp=datetime.datetime.now(tz=datetime.timezone.utc),
+            timestamp=datetime.datetime.now(tz=datetime.UTC),
             bounding_box=[-10.0, 35.0, 10.0, 50.0],
             atmospheric_vars=["u10", "v10", "msl"],
             ocean_vars=["uo", "vo", "zos", "vsdx", "vsdy"],

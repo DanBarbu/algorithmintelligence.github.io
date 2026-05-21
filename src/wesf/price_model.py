@@ -8,7 +8,7 @@ Falls back to SARIMA (statsmodels) if torch/darts is not available in the enviro
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -19,7 +19,6 @@ from src.core.config import get_settings
 
 if TYPE_CHECKING:
     import pandas as pd
-    import numpy as np
 
 logger = structlog.get_logger(__name__)
 
@@ -27,43 +26,45 @@ logger = structlog.get_logger(__name__)
 # Optional heavy imports
 # ---------------------------------------------------------------------------
 try:
-    import numpy as _np  # type: ignore
+    import numpy as _np  # type: ignore[import-untyped]
 
     _NUMPY_AVAILABLE = True
 except ImportError:
     _NUMPY_AVAILABLE = False
-    _np = None  # type: ignore
+    _np = None  # type: ignore[assignment]
 
 try:
-    import pandas as _pd  # type: ignore
+    import pandas as _pd  # type: ignore[import-untyped]
 
     _PANDAS_AVAILABLE = True
 except ImportError:
     _PANDAS_AVAILABLE = False
-    _pd = None  # type: ignore
+    _pd = None  # type: ignore[import-untyped]
 
 # Darts / PyTorch (may not be installed)
 try:
-    from darts import TimeSeries as _DartsTimeSeries  # type: ignore
-    from darts.models import NBEATSModel as _NBEATSModel  # type: ignore
+    from darts import TimeSeries as _DartsTimeSeries  # type: ignore[import-untyped]
+    from darts.models import NBEATSModel as _NBEATSModel  # type: ignore[import-untyped]
 
     _DARTS_AVAILABLE = True
     logger.debug("darts+torch available — N-BEATS model enabled")
 except ImportError:
     _DARTS_AVAILABLE = False
-    _DartsTimeSeries = None  # type: ignore
-    _NBEATSModel = None  # type: ignore
+    _DartsTimeSeries = None  # type: ignore[import-untyped]
+    _NBEATSModel = None  # type: ignore[import-untyped]
     logger.warning("darts/torch not available; N-BEATS disabled")
 
 # Statsmodels SARIMA fallback
 try:
-    from statsmodels.tsa.statespace.sarimax import SARIMAX as _SARIMAX  # type: ignore
+    from statsmodels.tsa.statespace.sarimax import (
+        SARIMAX as _SARIMAX,  # type: ignore[import-untyped]
+    )
 
     _STATSMODELS_AVAILABLE = True
     logger.debug("statsmodels available — SARIMA fallback enabled")
 except ImportError:
     _STATSMODELS_AVAILABLE = False
-    _SARIMAX = None  # type: ignore
+    _SARIMAX = None  # type: ignore[import-untyped]
     logger.warning("statsmodels not available; SARIMA fallback disabled")
 
 
@@ -71,7 +72,7 @@ except ImportError:
 # Module-level utility: synthetic price series
 # ---------------------------------------------------------------------------
 
-def _synthetic_price_series(n_hours: int = 8760, seed: int = 42) -> "pd.Series":
+def _synthetic_price_series(n_hours: int = 8760, seed: int = 42) -> pd.Series:
     """
     Generate a realistic synthetic hourly electricity price series.
 
@@ -166,7 +167,7 @@ class ElectricityPriceModel:
         self._model: Any = None
         self._model_name: str = "naive_seasonal"
         self._fitted: bool = False
-        self._training_series: "pd.Series | None" = None
+        self._training_series: pd.Series | None = None
 
         logger.info(
             "ElectricityPriceModel initialised",
@@ -182,8 +183,8 @@ class ElectricityPriceModel:
 
     def train(
         self,
-        price_series: "pd.Series",
-        weather_features: "pd.DataFrame | None" = None,
+        price_series: pd.Series,
+        weather_features: pd.DataFrame | None = None,
     ) -> None:
         """
         Fit the forecasting model.
@@ -235,8 +236,8 @@ class ElectricityPriceModel:
 
     def _train_nbeats(
         self,
-        price_series: "pd.Series",
-        weather_features: "pd.DataFrame | None",
+        price_series: pd.Series,
+        weather_features: pd.DataFrame | None,
     ) -> None:
         """Fit Darts NBEATSModel."""
         ts = _DartsTimeSeries.from_series(price_series)
@@ -258,7 +259,7 @@ class ElectricityPriceModel:
         self._model_name = "N-BEATS"
         self._fitted = True
 
-    def _train_sarima(self, price_series: "pd.Series") -> None:
+    def _train_sarima(self, price_series: pd.Series) -> None:
         """Fit SARIMA(1,1,1)(1,1,1,24)."""
         model = _SARIMAX(
             price_series,
@@ -271,7 +272,7 @@ class ElectricityPriceModel:
         self._model_name = "SARIMA"
         self._fitted = True
 
-    def _train_naive(self, price_series: "pd.Series") -> None:
+    def _train_naive(self, price_series: pd.Series) -> None:
         """Compute hour-of-day means as a naive seasonal baseline."""
         if not _PANDAS_AVAILABLE or not _NUMPY_AVAILABLE:
             # Ultra-minimal fallback — just store the mean
@@ -293,7 +294,7 @@ class ElectricityPriceModel:
     def predict(
         self,
         n_hours: int = 24,
-        weather_features: "pd.DataFrame | None" = None,
+        weather_features: pd.DataFrame | None = None,
     ) -> PriceForecast:
         """
         Produce an hourly price forecast.
@@ -334,12 +335,12 @@ class ElectricityPriceModel:
                 .to_pydatetime()
             )
         else:
-            now = datetime.now(tz=timezone.utc)
+            now = datetime.now(tz=UTC)
             intervals = [now + timedelta(hours=i + 1) for i in range(n_hours)]
 
         # Ensure timestamps are UTC-aware
         intervals = [
-            ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
+            ts if ts.tzinfo is not None else ts.replace(tzinfo=UTC)
             for ts in intervals
         ]
 
@@ -354,15 +355,16 @@ class ElectricityPriceModel:
         return PriceForecast(
             run_id=self.run_id,
             market=market_id,
-            forecast_generated_at=datetime.now(tz=timezone.utc),
+            forecast_generated_at=datetime.now(tz=UTC),
             forecast_intervals=intervals,
             forecast_prices_eur_mwh=prices,
             negative_pricing_flags=neg_flags,
             model_name=self._model_name,
+            model_mae=None,
         )
 
     def _predict_nbeats(
-        self, n_hours: int, weather_features: "pd.DataFrame | None"
+        self, n_hours: int, weather_features: pd.DataFrame | None
     ) -> list[float]:
         """Generate predictions from fitted N-BEATS model."""
         pred_ts = self._model.predict(n=n_hours)
@@ -380,6 +382,8 @@ class ElectricityPriceModel:
             return [float(mean_val) for _ in range(n_hours)]
 
         # Start from 1 h after last training observation
+        if self._training_series is None:
+            return [55.0] * n_hours
         last_ts = self._training_series.index[-1]
         forecast_start = last_ts + _pd.Timedelta(hours=1)
         future_index = _pd.date_range(start=forecast_start, periods=n_hours, freq="h")
@@ -392,7 +396,7 @@ class ElectricityPriceModel:
     # Data loading
     # ------------------------------------------------------------------
 
-    def load_epex_csv(self, path: Path) -> "pd.Series":
+    def load_epex_csv(self, path: Path) -> pd.Series:
         """
         Load EPEX SPOT CSV format and return a price Series.
 
@@ -440,7 +444,7 @@ class ElectricityPriceModel:
     # Evaluation
     # ------------------------------------------------------------------
 
-    def evaluate(self, test_series: "pd.Series") -> float:
+    def evaluate(self, test_series: pd.Series) -> float:
         """
         Compute Mean Absolute Error on a held-out test series.
 

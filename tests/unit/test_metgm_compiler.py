@@ -16,7 +16,6 @@ from lxml import etree
 
 from src.nato.metgm_compiler import MetgmCompiler
 
-
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
 @pytest.fixture()

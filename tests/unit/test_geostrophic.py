@@ -7,11 +7,9 @@ import numpy as np
 import pytest
 
 from src.lagrangian.geostrophic import (
-    GeostrophicCorrector,
-    _EQUATORIAL_LAT,
     _GEO_SPEED_CLIP,
-    _GRAVITY,
     _OMEGA,
+    GeostrophicCorrector,
 )
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -40,10 +38,7 @@ class TestCoriolisSign:
     def test_coriolis_sign_northern_hemisphere(self):
         """f > 0 for positive latitudes."""
         lat = make_lat(10.0, 60.0)
-        lon = make_lon()
-        ssh = make_flat_ssh()  # uniform → gradients are zero, but we can inspect f via output
-        # We verify by using a tilted SSH and checking that the velocity sign is consistent
-        # with f > 0 in NH.  Alternatively we verify analytically:
+        # Verify analytically that Coriolis f > 0 everywhere in the NH:
         lat_rad = np.deg2rad(lat)
         f = 2.0 * _OMEGA * np.sin(lat_rad)
         assert np.all(f > 0), f"Expected f > 0 in NH, got min={f.min()}"

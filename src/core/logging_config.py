@@ -34,17 +34,28 @@ def configure_logging(level: str = "INFO", *, pretty: bool = False) -> None:
         renderer = structlog.processors.JSONRenderer()
 
     structlog.configure(
-        processors=shared_processors + [renderer],
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+        processors=shared_processors
+        + [
+            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+        ],
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
 
-    # Also configure stdlib logging so third-party libs behave
-    logging.basicConfig(
-        format="%(message)s",
-        stream=sys.stdout,
-        level=numeric_level,
+    formatter = structlog.stdlib.ProcessorFormatter(
+        processors=[
+            structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+            renderer,
+        ],
     )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+
+    root_logger = logging.getLogger()
+    root_logger.handlers = [handler]
+    root_logger.setLevel(numeric_level)
+
     # Silence noisy libraries
     for noisy in ("urllib3", "httpx", "httpcore", "asyncio"):
         logging.getLogger(noisy).setLevel(logging.WARNING)

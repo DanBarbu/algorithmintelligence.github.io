@@ -303,8 +303,8 @@ class TestBoundingBoxClipping:
             bounding_box=narrow_bbox,
             output_path=tmp_path / "narrow.nc",
         )
-        assert wide_ds.dims["lat"] > narrow_ds.dims["lat"]
-        assert wide_ds.dims["lon"] > narrow_ds.dims["lon"]
+        assert wide_ds.sizes["lat"] > narrow_ds.sizes["lat"]
+        assert wide_ds.sizes["lon"] > narrow_ds.sizes["lon"]
 
 
 class TestVariableRenaming:

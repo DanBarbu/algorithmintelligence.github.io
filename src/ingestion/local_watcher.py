@@ -10,6 +10,7 @@ import asyncio
 from pathlib import Path
 
 import structlog
+from watchfiles import awatch, Change  # type: ignore[import-untyped]  # noqa: F401
 
 from src.core.config import get_settings
 
@@ -52,8 +53,6 @@ class LocalWatcher:
             queue: An ``asyncio.Queue[Path]`` that receives discovered file
                    paths as they appear in the watched directory.
         """
-        from watchfiles import awatch, Change  # type: ignore[import-untyped]
-
         self._watch_dir.mkdir(parents=True, exist_ok=True)
         self._log.info(
             "local_watcher.start",

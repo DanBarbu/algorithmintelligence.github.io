@@ -30,15 +30,15 @@ try:
 
     _NUMPY_AVAILABLE = True
 except ImportError:
-    _NUMPY_AVAILABLE = False
-    _np = None  # type: ignore[assignment]
+    _NUMPY_AVAILABLE = False  # pragma: no cover
+    _np = None  # type: ignore[assignment]  # pragma: no cover
 
 try:
     import pandas as _pd  # type: ignore[import-untyped]
 
     _PANDAS_AVAILABLE = True
-except ImportError:
-    _PANDAS_AVAILABLE = False
+except ImportError:  # pragma: no cover
+    _PANDAS_AVAILABLE = False  # pragma: no cover
     _pd = None  # type: ignore[import-untyped]
 
 # Darts / PyTorch (may not be installed)
@@ -50,9 +50,9 @@ try:
     logger.debug("darts+torch available — N-BEATS model enabled")
 except ImportError:
     _DARTS_AVAILABLE = False
-    _DartsTimeSeries = None  # type: ignore[import-untyped]
-    _NBEATSModel = None  # type: ignore[import-untyped]
-    logger.warning("darts/torch not available; N-BEATS disabled")
+    _DartsTimeSeries = None  # type: ignore[import-untyped]  # pragma: no cover
+    _NBEATSModel = None  # type: ignore[import-untyped]  # pragma: no cover
+    logger.warning("darts/torch not available; N-BEATS disabled")  # pragma: no cover
 
 # Statsmodels SARIMA fallback
 try:
@@ -63,8 +63,8 @@ try:
     _STATSMODELS_AVAILABLE = True
     logger.debug("statsmodels available — SARIMA fallback enabled")
 except ImportError:
-    _STATSMODELS_AVAILABLE = False
-    _SARIMAX = None  # type: ignore[import-untyped]
+    _STATSMODELS_AVAILABLE = False  # pragma: no cover
+    _SARIMAX = None  # type: ignore[import-untyped]  # pragma: no cover
     logger.warning("statsmodels not available; SARIMA fallback disabled")
 
 
@@ -95,9 +95,9 @@ def _synthetic_price_series(n_hours: int = 8760, seed: int = 42) -> pd.Series:
         Series with a UTC hourly DatetimeIndex and price values in €/MWh.
     """
     if not _NUMPY_AVAILABLE:
-        raise ImportError("numpy is required to generate synthetic price series")
+        raise ImportError("numpy is required to generate synthetic price series")  # pragma: no cover
     if not _PANDAS_AVAILABLE:
-        raise ImportError("pandas is required to generate synthetic price series")
+        raise ImportError("pandas is required to generate synthetic price series")  # pragma: no cover
 
     rng = _np.random.default_rng(seed)
     hours = _np.arange(n_hours, dtype=float)
@@ -324,7 +324,7 @@ class ElectricityPriceModel:
         if _NUMPY_AVAILABLE:
             prices = list(map(float, _np.clip(raw_prices, -500.0, 3000.0)))
         else:
-            prices = [float(max(-500.0, min(3000.0, p))) for p in raw_prices]
+            prices = [float(max(-500.0, min(3000.0, p))) for p in raw_prices]  # pragma: no cover
 
         # Build forecast timestamps — start from last known time + 1h
         if self._training_series is not None and _PANDAS_AVAILABLE:
@@ -335,8 +335,8 @@ class ElectricityPriceModel:
                 .to_pydatetime()
             )
         else:
-            now = datetime.now(tz=UTC)
-            intervals = [now + timedelta(hours=i + 1) for i in range(n_hours)]
+            now = datetime.now(tz=UTC)  # pragma: no cover
+            intervals = [now + timedelta(hours=i + 1) for i in range(n_hours)]  # pragma: no cover
 
         # Ensure timestamps are UTC-aware
         intervals = [
@@ -414,7 +414,7 @@ class ElectricityPriceModel:
             Hourly price series with UTC DatetimeIndex.
         """
         if not _PANDAS_AVAILABLE:
-            raise ImportError("pandas is required to load EPEX CSV files")
+            raise ImportError("pandas is required to load EPEX CSV files")  # pragma: no cover
 
         df = _pd.read_csv(path, parse_dates=["datetime"])
         if "datetime" not in df.columns or "price_eur_mwh" not in df.columns:

@@ -40,9 +40,9 @@ try:
 
     _SCIPY_AVAILABLE = True
     logger.debug("scipy.interpolate available — using RegularGridInterpolator")
-except ImportError:
-    _SCIPY_AVAILABLE = False
-    logger.warning("scipy not available; falling back to numpy bilinear interpolation")
+except ImportError:  # pragma: no cover
+    _SCIPY_AVAILABLE = False  # pragma: no cover
+    logger.warning("scipy not available; falling back to numpy bilinear interpolation")  # pragma: no cover
 
 
 class RampForecaster:

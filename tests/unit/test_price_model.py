@@ -301,3 +301,106 @@ class TestPriceForecastSchema:
         forecast = model.predict(n_hours=12)
 
         assert forecast.forecast_generated_at.tzinfo is not None
+
+
+# ---------------------------------------------------------------------------
+# evaluate() — requires train() first
+# ---------------------------------------------------------------------------
+
+class TestEvaluate:
+    @requires_numpy_pandas
+    def test_evaluate_returns_float(self):
+        """evaluate() returns a float MAE value."""
+        series = _synthetic_price_series(n_hours=500, seed=20)
+        model = ElectricityPriceModel(market="EPEX_DE", seed=20)
+        model.train(series)
+        mae = model.evaluate(series.iloc[-24:])
+        assert isinstance(mae, float)
+        assert mae >= 0.0
+
+    @requires_numpy_pandas
+    def test_evaluate_before_train_raises(self):
+        """evaluate() before train() raises RuntimeError."""
+        import pandas as pd
+        model = ElectricityPriceModel(market="EPEX_DE", seed=0)
+        dummy = pd.Series([50.0] * 10)
+        with pytest.raises(RuntimeError, match="train"):
+            model.evaluate(dummy)
+
+    @requires_numpy_pandas
+    def test_evaluate_mae_is_finite(self):
+        """MAE from evaluate() is a finite number."""
+        import math
+        series = _synthetic_price_series(n_hours=300, seed=21)
+        model = ElectricityPriceModel(market="EPEX_DE", seed=21)
+        model.train(series)
+        mae = model.evaluate(series.iloc[-12:])
+        assert math.isfinite(mae)
+
+
+# ---------------------------------------------------------------------------
+# load_epex_csv()
+# ---------------------------------------------------------------------------
+
+class TestLoadEpexCsv:
+    @requires_numpy_pandas
+    def test_load_epex_csv_returns_series(self, tmp_path):
+        """load_epex_csv() returns a pd.Series with the correct length."""
+        import pandas as pd
+
+        csv_path = tmp_path / "epex_test.csv"
+        n = 48
+        idx = pd.date_range("2025-01-01", periods=n, freq="h", tz="UTC")
+        prices = [55.0 + i * 0.1 for i in range(n)]
+        df = pd.DataFrame({"datetime": idx, "price_eur_mwh": prices})
+        df.to_csv(csv_path, index=False)
+
+        model = ElectricityPriceModel(market="EPEX_DE", seed=0)
+        series = model.load_epex_csv(csv_path)
+
+        assert isinstance(series, pd.Series)
+        assert len(series) == n
+
+    @requires_numpy_pandas
+    def test_load_epex_csv_bad_columns_raises(self, tmp_path):
+        """load_epex_csv() raises ValueError for wrong column names."""
+        import pandas as pd
+
+        csv_path = tmp_path / "bad.csv"
+        df = pd.DataFrame({"ts": ["2025-01-01"], "price": [50.0]})
+        df.to_csv(csv_path, index=False)
+
+        model = ElectricityPriceModel(market="EPEX_DE", seed=0)
+        with pytest.raises(ValueError, match="datetime"):
+            model.load_epex_csv(csv_path)
+
+    @requires_numpy_pandas
+    def test_load_epex_csv_tz_naive_localized_to_utc(self, tmp_path):
+        """tz-naive datetime index is localized to UTC (covers line 430)."""
+        import pandas as pd
+
+        csv_path = tmp_path / "epex_naive.csv"
+        n = 24
+        # Write tz-naive datetimes (no tz info in the CSV string)
+        idx = pd.date_range("2025-06-01", periods=n, freq="h")  # tz-naive
+        prices = [40.0 + i for i in range(n)]
+        df = pd.DataFrame({"datetime": idx.strftime("%Y-%m-%d %H:%M:%S"), "price_eur_mwh": prices})
+        df.to_csv(csv_path, index=False)
+
+        model = ElectricityPriceModel(market="EPEX_DE", seed=0)
+        series = model.load_epex_csv(csv_path)
+
+        assert series.index.tz is not None, "Expected UTC-aware index after tz_localize"
+        assert len(series) == n
+
+
+class TestMarketIdFallback:
+    @requires_numpy_pandas
+    def test_invalid_market_id_defaults_to_epex_de(self):
+        """Unknown market string falls back to EPEX_DE (covers lines 351-353)."""
+        from src.api.schemas import MarketID
+        series = _synthetic_price_series(n_hours=200, seed=55)
+        model = ElectricityPriceModel(market="UNKNOWN_MARKET", seed=55)
+        model.train(series)
+        forecast = model.predict(n_hours=12)
+        assert forecast.market == MarketID.EPEX_DE

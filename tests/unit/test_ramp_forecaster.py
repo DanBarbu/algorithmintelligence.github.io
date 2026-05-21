@@ -374,3 +374,60 @@ class TestTimeWindow:
 
         for alert in alerts:
             assert alert.time_window_end > alert.time_window_start
+
+
+# ---------------------------------------------------------------------------
+# 2D input handling (single-timestep arrays without batch dimension)
+# ---------------------------------------------------------------------------
+
+class TestRampForecaster2DInput:
+    """Tests for the 2D → 3D input expansion path (lines 134-143)."""
+
+    def test_2d_wind_array_accepted(self):
+        """2D (ny, nx) arrays (single timestep) are expanded and processed."""
+        import datetime
+
+        import numpy as np
+
+        from src.api.schemas import AssetLocation
+        from src.wesf.ramp_forecaster import RampForecaster
+
+        lat = np.linspace(35.0, 38.0, 4)
+        lon = np.linspace(13.0, 17.0, 4)
+        # 2D arrays (no time dimension) — above cut-out threshold
+        u10_2d = np.full((4, 4), 27.0, dtype=float)
+        v10_2d = np.zeros((4, 4), dtype=float)
+        cloud_2d = np.zeros((4, 4), dtype=float)
+
+        assets = [AssetLocation(asset_id="T2D", lon=15.0, lat=36.5,
+                                asset_type="WIND_TURBINE", rated_mw=5.0)]
+        forecaster = RampForecaster(assets=assets)
+        ts = [datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC)]
+
+        alerts = forecaster.forecast(u10_2d, v10_2d, cloud_2d, lat, lon, ts)
+        # Should detect the cut-out with 2D input
+        assert any(a.alert_type.value == "TURBINE_CUTOUT" for a in alerts)
+
+    def test_2d_shape_mismatch_raises(self):
+        """Mismatched first axis (timesteps vs arrays) raises ValueError."""
+        import datetime
+
+        import numpy as np
+
+        from src.api.schemas import AssetLocation
+        from src.wesf.ramp_forecaster import RampForecaster
+
+        lat = np.linspace(35.0, 38.0, 4)
+        lon = np.linspace(13.0, 17.0, 4)
+        # 3D arrays with 2 timesteps, but only 1 timestamp provided
+        u10_3d = np.ones((2, 4, 4), dtype=float) * 10.0
+        v10_3d = np.zeros((2, 4, 4), dtype=float)
+        cloud_3d = np.zeros((2, 4, 4), dtype=float)
+
+        assets = [AssetLocation(asset_id="T3D", lon=15.0, lat=36.5,
+                                asset_type="WIND_TURBINE", rated_mw=5.0)]
+        forecaster = RampForecaster(assets=assets)
+        ts = [datetime.datetime(2025, 1, 1, tzinfo=datetime.UTC)]  # only 1
+
+        with pytest.raises(ValueError, match="u10 leading axis"):
+            forecaster.forecast(u10_3d, v10_3d, cloud_3d, lat, lon, ts)

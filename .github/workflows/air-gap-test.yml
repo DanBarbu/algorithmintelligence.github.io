@@ -1,0 +1,181 @@
+name: Air-Gap Isolation Test
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: "Monte Carlo RNG seed"
+        required: false
+        default: "42"
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  air-gap-docker:
+    name: Docker air-gap isolation test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Prepare sample data ──────────────────────────────────────────────────
+      - name: Set up Python for sample data generation
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install minimal deps for sample generation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libeccodes-dev libhdf5-dev libnetcdf-dev libgeos-dev libproj-dev
+          pip install xarray numpy netCDF4 scipy
+
+      - name: Generate synthetic sample NetCDF data
+        run: |
+          python - <<'EOF'
+          import numpy as np
+          import xarray as xr
+          from pathlib import Path
+          import datetime
+
+          Path("data/samples").mkdir(parents=True, exist_ok=True)
+          rng = np.random.default_rng(42)
+
+          lat = np.arange(30.0, 40.25, 0.25)
+          lon = np.arange(10.0, 20.25, 0.25)
+          now = datetime.datetime(2024, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)
+          times = [np.datetime64(now + datetime.timedelta(hours=i)) for i in range(24)]
+          nt, ny, nx = len(times), len(lat), len(lon)
+
+          ds = xr.Dataset(
+              {
+                  "u10":  (["time", "lat", "lon"], rng.normal(5.0, 3.0, (nt, ny, nx)).astype("float32")),
+                  "v10":  (["time", "lat", "lon"], rng.normal(2.0, 3.0, (nt, ny, nx)).astype("float32")),
+                  "msl":  (["time", "lat", "lon"], rng.normal(101325., 500., (nt, ny, nx)).astype("float32")),
+                  "uo":   (["time", "lat", "lon"], rng.normal(0.1, 0.05, (nt, ny, nx)).astype("float32")),
+                  "vo":   (["time", "lat", "lon"], rng.normal(0.05, 0.05, (nt, ny, nx)).astype("float32")),
+                  "zos":  (["time", "lat", "lon"], rng.normal(0., 0.02, (nt, ny, nx)).astype("float32")),
+                  "vsdx": (["time", "lat", "lon"], rng.normal(0.02, 0.01, (nt, ny, nx)).astype("float32")),
+                  "vsdy": (["time", "lat", "lon"], rng.normal(0.01, 0.01, (nt, ny, nx)).astype("float32")),
+              },
+              coords={"time": times, "lat": lat, "lon": lon},
+              attrs={"Conventions": "CF-1.8", "source": "synthetic-ci"},
+          )
+          out = Path("data/samples/synthetic_merged.nc")
+          ds.to_netcdf(str(out), format="NETCDF4")
+          print(f"Saved sample: {out} ({out.stat().st_size} bytes)")
+          EOF
+
+      - name: Prepare output directory
+        run: mkdir -p /tmp/metoc-output
+
+      # ── Build Docker image ───────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: runtime
+          tags: metoc-lagrangian:ci-test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            AIR_GAP_BUILD=false
+
+      # ── Run air-gap test ─────────────────────────────────────────────────────
+      - name: Run pipeline in network-isolated container
+        run: |
+          docker run \
+            --network none \
+            --rm \
+            --name metoc-air-gap-test \
+            -e AIR_GAP_MODE=true \
+            -e SEED=${{ github.event.inputs.seed || '42' }} \
+            -e LOG_LEVEL=INFO \
+            -v "$(pwd)/data/samples:/app/data/input:ro" \
+            -v "/tmp/metoc-output:/app/data/output" \
+            metoc-lagrangian:ci-test \
+            python -m src.core.pipeline \
+              --origin "14.5,36.8" \
+              --bbox "10.0,30.0,20.0,40.0" \
+              --leeway 2.5 \
+              --seed ${{ github.event.inputs.seed || '42' }}
+
+      # ── Assert output files ──────────────────────────────────────────────────
+      - name: Assert METGM XML output exists
+        run: |
+          count=$(find /tmp/metoc-output -name "*.metgm.xml" | wc -l)
+          echo "METGM XML files found: $count"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No *.metgm.xml file found in /tmp/metoc-output"
+            ls -la /tmp/metoc-output/
+            exit 1
+          fi
+
+      - name: Assert NODEF-1 binary output exists
+        run: |
+          count=$(find /tmp/metoc-output -name "*.nodef1.bin" | wc -l)
+          echo "NODEF-1 binary files found: $count"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No *.nodef1.bin file found in /tmp/metoc-output"
+            ls -la /tmp/metoc-output/
+            exit 1
+          fi
+
+      - name: Assert APP-6 GeoJSON output exists
+        run: |
+          count=$(find /tmp/metoc-output -name "*.app6.geojson" | wc -l)
+          echo "APP-6 GeoJSON files found: $count"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No *.app6.geojson file found in /tmp/metoc-output"
+            ls -la /tmp/metoc-output/
+            exit 1
+          fi
+
+      - name: Assert pipeline summary JSON exists
+        run: |
+          count=$(find /tmp/metoc-output -name "*_summary.json" | wc -l)
+          echo "Pipeline summary files found: $count"
+          if [ "$count" -lt 1 ]; then
+            echo "ERROR: No *_summary.json file found in /tmp/metoc-output"
+            ls -la /tmp/metoc-output/
+            exit 1
+          fi
+
+      - name: Parse and validate summary JSON
+        run: |
+          python - <<'EOF'
+          import json
+          from pathlib import Path
+
+          summaries = sorted(Path("/tmp/metoc-output").glob("*_summary.json"))
+          assert summaries, "No summary file found"
+          summary = json.loads(summaries[0].read_text())
+
+          assert summary.get("success"), f"Pipeline reported failure: {summary.get('error_message')}"
+          duration = summary.get("duration_seconds", float("inf"))
+          assert duration < 180.0, f"NFR-2 violated: pipeline took {duration:.1f}s (limit 180s)"
+
+          print(f"Summary valid. Run ID: {summary['run_id']}")
+          print(f"Duration: {duration:.2f}s (NFR-2: < 180s — PASS)")
+          print(f"Success: {summary['success']}")
+          EOF
+
+      # ── Upload artifacts ─────────────────────────────────────────────────────
+      - name: Upload air-gap test output artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: air-gap-outputs
+          path: /tmp/metoc-output/
+          retention-days: 7

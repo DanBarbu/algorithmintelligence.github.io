@@ -235,8 +235,8 @@ class MetgmCompiler:
         """
         params: list[dict[str, Any]] = []
 
-        lat = ds.coords.get("lat") or ds.coords.get("latitude")
-        lon = ds.coords.get("lon") or ds.coords.get("longitude")
+        lat = ds.coords.get("lat") if "lat" in ds.coords else ds.coords.get("latitude")
+        lon = ds.coords.get("lon") if "lon" in ds.coords else ds.coords.get("longitude")
         time = ds.coords.get("time")
 
         if lat is None or lon is None:

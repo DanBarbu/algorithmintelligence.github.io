@@ -238,8 +238,8 @@ class Nodef1Exporter:
         Variables are processed in the canonical order defined by _OCEAN_VARS.
         The first time slice is used when the dataset contains a time dimension.
         """
-        lat = ds.coords.get("lat") or ds.coords.get("latitude")
-        lon = ds.coords.get("lon") or ds.coords.get("longitude")
+        lat = ds.coords.get("lat") if "lat" in ds.coords else ds.coords.get("latitude")
+        lon = ds.coords.get("lon") if "lon" in ds.coords else ds.coords.get("longitude")
         time_coord = ds.coords.get("time")
 
         if lat is None or lon is None:

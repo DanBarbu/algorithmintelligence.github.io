@@ -1,0 +1,184 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/*"
+  pull_request:
+    branches:
+      - main
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ── Lint ─────────────────────────────────────────────────────────────────────
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install ruff
+        run: pip install "ruff>=0.5"
+
+      - name: Run ruff check
+        run: ruff check src/ tests/
+
+  # ── Type check ───────────────────────────────────────────────────────────────
+  type-check:
+    name: Type check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install project + mypy
+        run: pip install -e ".[dev]"
+
+      - name: Run mypy
+        run: mypy src/ --ignore-missing-imports
+        continue-on-error: true   # treat type errors as warnings during development
+
+  # ── Unit tests ───────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    env:
+      AIR_GAP_MODE: "true"
+      SEED: "42"
+      LOG_LEVEL: "WARNING"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install system libraries (eccodes, HDF5, NetCDF, GEOS, PROJ)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libeccodes-dev \
+            libhdf5-dev \
+            libnetcdf-dev \
+            libgeos-dev \
+            libproj-dev
+
+      - name: Install project dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/unit/ \
+            --cov=src \
+            --cov-fail-under=70 \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -v
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ── Integration tests ─────────────────────────────────────────────────────────
+  integration-test:
+    name: Integration tests (air-gap)
+    runs-on: ubuntu-latest
+    env:
+      AIR_GAP_MODE: "true"
+      SEED: "42"
+      LOG_LEVEL: "WARNING"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libeccodes-dev \
+            libhdf5-dev \
+            libnetcdf-dev \
+            libgeos-dev \
+            libproj-dev
+
+      - name: Install project dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Ensure sample data directories exist
+        run: |
+          mkdir -p data/input data/output data/samples
+
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --timeout=300
+
+  # ── NATO schema validation ────────────────────────────────────────────────────
+  nato-schema-validate:
+    name: NATO schema validation
+    runs-on: ubuntu-latest
+    env:
+      AIR_GAP_MODE: "true"
+      SEED: "42"
+      LOG_LEVEL: "WARNING"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libeccodes-dev \
+            libhdf5-dev \
+            libnetcdf-dev \
+            libgeos-dev \
+            libproj-dev
+
+      - name: Install project dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run NATO schema validation tests
+        run: |
+          pytest \
+            tests/unit/test_metgm_compiler.py \
+            tests/unit/test_nodef1_exporter.py \
+            -v

@@ -121,7 +121,7 @@ async def get_drift_geojson(run_id: str) -> JSONResponse:
 )
 async def trigger_drift_run(
     background_tasks: BackgroundTasks,
-    origin: list[float] = Body(..., example=[14.5, 36.8]),
+    origin: list[float] = Body(..., examples={"default": {"value": [14.5, 36.8]}}),
     leeway_pct: float = Body(default=2.5, ge=1.0, le=5.0),
     seed: int = Body(default=42),
 ) -> dict[str, Any]:

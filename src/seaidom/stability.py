@@ -37,7 +37,7 @@ class AnalyticalRAOs:
         return 2 * np.pi * np.sqrt(m_added / k_h)
 
     def pitch_natural_period(self) -> float:
-        # moment of inertia about CG (kg m^2)
+        """Pitch natural period (s). Returns NaN if GM <= 0 (statically unstable)."""
         g = self.geom
         ballast_m = g.n_ballast * g.ballast_mass
         r_ballast = abs(-g.spine_depth - g.vertical_cg)
@@ -46,9 +46,22 @@ class AnalyticalRAOs:
         i_spar = g.m_spar * (g.spar_length ** 2 / 12 + r_spar ** 2)
         i_struct = (g.m_spine_struct + g.m_fins) * r_ballast ** 2
         i_top = (g.m_electronics_bottle + g.m_antenna_payload) * 0.1 ** 2
-        i_total = i_ballast + i_spar + i_struct + i_top
+        # Hydrophone bottle on a 2 m rope: rope-pendulum period is
+        #   T_rope = 2 pi sqrt(L_rope/g) ≈ 2.84 s.
+        # For wave periods >> T_rope the bottle hangs plumb beneath the spar tip
+        # and only contributes its NET weight to the spar tip — its swinging
+        # inertia is decoupled from body pitch. For wave periods < T_rope it is
+        # nearly inertial-fixed and rigidly coupled. We model the typical regime
+        # (Tp 5-12 s, rope ~3 s) as slow: rigid coupling, but only the net
+        # (mass - displaced) inertia contributes.
+        net_hydro = max(g.hydrophone_bottle_mass - RHO * g.hydrophone_bottle_volume, 0.0)
+        r_hydro = abs(g.hydrophone_bottle_z - g.vertical_cg)
+        i_hydro = net_hydro * r_hydro ** 2
+        i_total = i_ballast + i_spar + i_struct + i_top + i_hydro
         i_added = 1.5 * i_total
         gm_L, _ = g.gm()
+        if gm_L <= 0:
+            return float("nan")     # statically unstable in pitch
         c_pitch = RHO * G * g.displaced_volume * gm_L
         return 2 * np.pi * np.sqrt(i_added / c_pitch)
 
@@ -105,6 +118,21 @@ def assess_sea_state(
     sea: SeaState,
     omega: np.ndarray | None = None,
 ) -> dict:
+    if not rao_model.geom.is_statically_stable:
+        return {
+            "sea_state": sea,
+            "Hs_in": sea.hs,
+            "Tp_in": sea.tp,
+            "Hs_heave": float("nan"),
+            "sigma_heave_m": float("nan"),
+            "max_heave_3h_m": float("nan"),
+            "sigma_pitch_deg": float("nan"),
+            "max_pitch_3h_deg": float("nan"),
+            "Tn_heave_s": rao_model.heave_natural_period(),
+            "Tn_pitch_s": float("nan"),
+            "antenna_clearance_m": float("nan"),
+            "verdict": "STATICALLY UNSTABLE — capsizes at rest",
+        }
     if omega is None:
         omega = np.linspace(0.1, 6.0, 600)
     s_eta = jonswap(omega, sea.hs, sea.tp)

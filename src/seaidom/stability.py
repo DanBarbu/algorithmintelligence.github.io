@@ -65,11 +65,18 @@ class AnalyticalRAOs:
         c_pitch = RHO * G * g.displaced_volume * gm_L
         return 2 * np.pi * np.sqrt(i_added / c_pitch)
 
+    def heave_rao_complex(self, omega: np.ndarray) -> np.ndarray:
+        """Complex heave RAO (m/m), 2nd-order damped oscillator.
+
+        H_3(0) = 1 (perfect long-wave following), H_3(inf) -> 0 (no following).
+        """
+        wn = 2 * np.pi / self.heave_natural_period()
+        denom = wn ** 2 - omega ** 2 + 2j * self.zeta_heave * wn * omega
+        return wn ** 2 / denom
+
     def heave_rao(self, omega: np.ndarray) -> np.ndarray:
         """|H_3(omega)| in m / m wave amplitude."""
-        wn = 2 * np.pi / self.heave_natural_period()
-        r = omega / wn
-        return 1.0 / np.sqrt((1 - r ** 2) ** 2 + (2 * self.zeta_heave * r) ** 2)
+        return np.abs(self.heave_rao_complex(omega))
 
     def pitch_rao(self, omega: np.ndarray) -> np.ndarray:
         """|H_5(omega)| in rad / m wave amplitude.
@@ -110,6 +117,96 @@ def spectral_response(
         "tz": tz,
         "hs_response": 4 * sigma,
         "x_max_3h": x_max_3h,
+    }
+
+
+def antenna_immersion_analysis(
+    rao_model: AnalyticalRAOs,
+    sea: SeaState,
+    omega: np.ndarray | None = None,
+    storm_duration_s: float = 3 * 3600.0,
+    survivable_duration_s: float = 60.0,
+) -> dict:
+    """Stationary Gaussian level-crossing analysis of antenna immersion.
+
+    The antenna is "wet" when its world-frame z falls below the local wave
+    surface. For a surface-piercing spar this is governed by the relative
+    motion  Y(t) = eta(t) - heave(t)  crossing the freeboard threshold h_fb
+    (with a small second-order pitch correction).
+
+    Returns: instantaneous wet probability, mean immersion duration per event,
+    expected number of events per storm, and the probability that any single
+    event exceeds `survivable_duration_s`.
+    """
+    if omega is None:
+        omega = np.linspace(0.05, 12.0, 1200)
+
+    g = rao_model.geom
+    h_fb = g.spar_freeboard
+
+    # JONSWAP wave spectrum
+    s_eta = jonswap(omega, sea.hs, sea.tp)
+
+    # Complex heave RAO -> relative-motion spectrum  |1 - H_3|^2 * S_eta
+    h3 = rao_model.heave_rao_complex(omega)
+    rel_factor = np.abs(1.0 - h3) ** 2
+    s_y = rel_factor * s_eta
+
+    m0_y = float(np.trapezoid(s_y, omega))
+    m2_y = float(np.trapezoid(s_y * omega ** 2, omega))
+    sigma_y = np.sqrt(m0_y) if m0_y > 0 else 0.0
+
+    # Effective freeboard threshold reduced by mean pitch-induced drop
+    s_theta = (rao_model.pitch_rao(omega) ** 2) * s_eta
+    sigma_theta = np.sqrt(np.trapezoid(s_theta, omega)) if rao_model.geom.is_statically_stable else 0.0
+    pitch_drop = h_fb * (sigma_theta ** 2) / 2.0   # E[h_fb * theta^2 / 2]
+    threshold = max(h_fb - pitch_drop, 0.0)
+
+    if sigma_y <= 0 or threshold <= 0:
+        # numerical degenerate
+        return {
+            "sigma_y_m": sigma_y,
+            "effective_threshold_m": threshold,
+            "sigma_pitch_deg": np.degrees(sigma_theta),
+            "p_wet_instant": 0.0,
+            "rate_events_per_hour": 0.0,
+            "mean_event_duration_s": 0.0,
+            "n_events_per_storm": 0.0,
+            "p_event_exceeds_survivable": 0.0,
+            "survivable": True,
+        }
+
+    # zero-up-crossing rate of Y(t)
+    nu0 = (1.0 / (2 * np.pi)) * np.sqrt(m2_y / m0_y)
+    # Rice formula: rate of up-crossings of level a by Gaussian Y
+    a = threshold
+    z = a / sigma_y
+    nu_a = nu0 * np.exp(-0.5 * z ** 2)
+    # Instantaneous P(Y > a) for zero-mean Gaussian
+    from math import erfc
+    p_wet = 0.5 * erfc(z / np.sqrt(2))
+    # Mean duration of an excursion above a (P / rate)
+    tau = p_wet / nu_a if nu_a > 0 else float("inf")
+    # Expected number of events in storm
+    n_events = nu_a * storm_duration_s
+    # Excursion durations for narrow-band Gaussian above a high level
+    # are well approximated by an exponential distribution with mean tau.
+    # => P(any single event > T) = exp(-T/tau).
+    p_long = float(np.exp(-survivable_duration_s / tau)) if tau > 0 else 0.0
+    # Probability at least one event in the storm exceeds T (Poisson approx.):
+    p_storm_violation = 1.0 - np.exp(-n_events * p_long)
+
+    return {
+        "sigma_y_m": sigma_y,
+        "effective_threshold_m": threshold,
+        "sigma_pitch_deg": float(np.degrees(sigma_theta)),
+        "p_wet_instant": float(p_wet),
+        "rate_events_per_hour": float(nu_a * 3600.0),
+        "mean_event_duration_s": float(tau),
+        "n_events_per_storm": float(n_events),
+        "p_event_exceeds_survivable": float(p_long),
+        "p_storm_violation": float(p_storm_violation),
+        "survivable": p_storm_violation < 0.01,   # < 1% chance of >60 s wetting per 3-h storm
     }
 
 

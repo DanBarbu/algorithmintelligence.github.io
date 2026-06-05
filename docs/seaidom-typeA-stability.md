@@ -101,6 +101,66 @@ REV-B with the recommended fix keeps the antenna **dry through SS3** (vs
 SS2 for REV-A) and reduces pitch extremes 5–10% across the board thanks to
 the longer pendulum arm and higher GM.
 
+## 4b. Antenna immersion duration — 60-second survivability thesis
+
+**Thesis (user-supplied):** the antenna electronics survive any single wetting
+that lasts ≤ 60 s. Verify that no individual antenna-immersion event in any
+sea state exceeds this limit.
+
+**Method.** The §4 "antenna clearance" column compared the antenna's world-
+frame z to **still water level**, which is the wrong reference for a wave-
+following buoy — the buoy is *riding the wave*, so its heave largely cancels
+the wave's vertical excursion at its own location. The right metric is the
+**relative motion**
+
+  Y(t) = η(t) − heave(t)
+
+crossing the freeboard threshold h_fb. With H₃(ω) → 1 at low ω (perfect
+long-wave following), Y has essentially zero energy at the spectral peak and
+only gets a small high-frequency tail where the buoy cannot follow.
+
+Stationary-Gaussian level-crossing theory (Rice formula) then gives, for each
+sea state: the instantaneous wet probability, the rate ν⁺(h_fb) of immersion
+events, the mean event duration P(Y > h_fb)/ν⁺(h_fb), and the probability
+P(τ > 60 s) = exp(−60/τ̄) that any single event exceeds the survivability
+threshold.
+
+| Sea state | Hs (m) | Tp (s) | σ_Y (cm) | P(wet) | events / 3 h | P(>60 s in 3 h) | verdict |
+|---|---:|---:|---:|---:|---:|---:|---|
+| SS2 Smooth      | 0.30 |  5.0 | 1.9 | 0 | 0 | 0 | **OK** |
+| SS3 Slight      | 0.90 |  6.5 | 3.5 | 0 | 0 | 0 | **OK** |
+| SS4 Moderate    | 1.90 |  8.0 | 5.0 | 2 × 10⁻¹⁹⁶ | 1 × 10⁻¹⁹⁰ | 0 | **OK** |
+| SS5 Rough       | 3.30 | 10.0 | 5.8 | 1 × 10⁻¹⁴⁶ | 7 × 10⁻¹⁴¹ | 0 | **OK** |
+| SS6 Very Rough  | 5.00 | 12.0 | 6.3 | 4 × 10⁻¹²² | 2 × 10⁻¹¹⁶ | 0 | **OK** |
+
+**Interpretation.** σ_Y is 2–6 cm at every sea state — *two orders of
+magnitude* below the 1.5 m freeboard. The antenna would have to drop
+25–80 standard deviations to immerse, so events are essentially impossible
+in any linear sea state. The thesis (≤ 60 s per immersion) is verified with
+enormous margin.
+
+**Caveats (nonlinear effects not captured by linear theory).**
+
+1. **Wave breaking & spray (SS5/SS6).** Steep crests and white-cap foam
+   *will* douse the antenna with spray, but each splash event lasts on the
+   order of √(Hs/g) — about 0.7 s at SS6, well under 60 s.
+2. **Green-water / wave run-up at the bottle.** The wave can pile up against
+   the surface float and crest above the antenna for short pulses; same
+   order-of-magnitude duration as a single wave (Tp ≈ 5–12 s), still under
+   60 s per pulse.
+3. **Capsize.** The only failure mode that can break the 60-s thesis. If
+   the buoy capsizes and stays inverted, the antenna is submerged for hours
+   until self-righting. From §4: the recommended fix is sub-resonant and
+   has GM > +0.5 m, but SS6 max-pitch (30°) is marginal. If antenna
+   integrity is mission-critical, raise the design margin at SS6 by either
+   (a) extending the hydrophone-bottle rope from 2 m → 3 m (longer pendulum),
+   or (b) raising the hydrophone-bottle mass from 5 → 6 kg.
+
+**Bottom line:** the 60-s thesis is robust under linear sea conditions for
+every state through SS6. The only conceivable violation is a full capsize at
+SS6, which is addressable with a small further increase in pendulum mass or
+length.
+
 ## 5. Interpretation
 
 - **Heave is wave-following** at every sea state (T₃ ≈ 1 s ≪ Tp). The buoy

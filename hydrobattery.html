@@ -78,6 +78,7 @@
     .leaflet-control-geocoder-form input{font-size:12px!important}
     @keyframes pulse{0%{transform:scale(1);opacity:.8}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
     .dot-pulse{animation:pulse 1.5s ease-out infinite}
+    .bf-badge{display:inline-block;background:#7f5af0;color:#fff;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.3px}
   </style>
 </head>
 <body>
@@ -86,7 +87,7 @@
     <div class="h-logo">&#128167;</div>
     <div>
       <div class="h-title">Malaysia &amp; Romania Hydrobattery Atlas</div>
-      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Bluefield sites</div>
+      <div class="h-sub">ANU PHES &mdash; Pumped Hydro Energy Storage &bull; Greenfield + Bluefield + Brownfield sites</div>
     </div>
   </div>
   <div class="h-ctrl">
@@ -131,7 +132,7 @@
 </div>
 <div id="foot">
   <div>&#169; OpenStreetMap contributors &bull; CartoDB &bull; ANU RE100 Group PHES Atlas methodology</div>
-  <div><span id="cnt">24</span> PHES pairs (MY + RO) &bull; click a dot to view reservoirs &amp; pipeline</div>
+  <div><span id="cnt">24</span> PHES pairs (MY + RO) &bull; click a marker to view details</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -304,7 +305,49 @@ var SITES=[
   {id:"RO008",name:"Almăj–Banat",cls:"A",cty:"RO",
    u:{n:"Almăj Upper",lat:44.882,lng:22.122,elev:820,area:0.62,bear:25,dlen:510},
    l:{n:"Nera Valley Lower",lat:44.822,lng:22.082,elev:215,area:0.92,bear:205,dlen:640},
-   head:605,dist:8.2,slope:0.074,cap:15.5}
+   head:605,dist:8.2,slope:0.074,cap:15.5},
+
+  /* ════ ROMANIA — Dobrogea brownfield (underground mine + quarry-lake pairs) ════ */
+  {id:"ro-dobrogea-altan-tepe",name:"Altân Tepe",cls:"AAA",cty:"RO",bf:true,
+   config:"Underground",formerUse:"Copper-pyrite underground mine; central shaft to 750 m, ore lenses to 900 m",
+   closedYear:2003,owner:"CN Minvest Deva (Romanian state)",
+   confidence:"head:HIGH (documented shaft depth) | volume:LOW (estimated accessible void — VERIFY)",
+   scaleTiers:[{e:3,v:1800000},{e:6,v:3600000},{e:10,v:6000000}],
+   power_MW:300,duration_h:10,rte:0.80,
+   notes:"Only deep underground mine in Dobrogea. High intrinsic head is the asset; reusable void is the binding constraint. Sweep cavern €/m³ — it dominates LCOS.",
+   u:{n:"Dealul de Aur surface lake (shaft collar)",lat:44.7910,lng:28.5656,elev:220,area:0.18,dlen:250},
+   l:{n:"Underground cavern (rehabilitated workings)",lat:44.7914,lng:28.5660,elev:-480,area:0.12,dlen:0},
+   head:700,dist:0.8,slope:0.875,cap:3.0},
+  {id:"ro-dobrogea-greci-muntele-carol",name:"Greci — Muntele Carol",cls:"AA",cty:"RO",bf:true,
+   config:"Lake Pair",formerUse:"Granite quarry (one of the largest in Romania)",
+   closedYear:null,owner:"n/a (verify)",
+   confidence:"LOW — coordinates and elevations APPROXIMATE; verify on map",
+   scaleTiers:[{e:1.2,v:2000000},{e:2.5,v:4200000},{e:5,v:8400000}],
+   power_MW:150,duration_h:8,rte:0.80,
+   notes:"Adjacent to Macin Mountains National Park — environmental screening likely required.",
+   u:{n:"Built reservoir on Macin ridge (APPROX)",lat:45.0180,lng:28.2430,elev:400,area:0.40,bear:10,dlen:650},
+   l:{n:"Quarry floor (APPROX)",lat:45.0140,lng:28.2490,elev:150,area:0.35,dlen:0},
+   head:250,dist:1.2,slope:0.208,cap:1.2},
+  {id:"ro-dobrogea-iacobdeal-turcoaia",name:"Iacobdeal (Turcoaia)",cls:"A",cty:"RO",bf:true,
+   config:"Lake Pair",formerUse:"Granite quarry, flooded (closed 1999) — now a ~20–30 m deep lake",
+   closedYear:1999,owner:"former ICH Sitorman (verify current title)",
+   confidence:"LOW — coordinates and elevations APPROXIMATE; verify on map",
+   scaleTiers:[{e:0.7,v:1500000},{e:1.5,v:3200000},{e:3,v:6400000}],
+   power_MW:90,duration_h:7.8,rte:0.80,
+   notes:"Lower reservoir already water-filled (advantage). Tourism / Natura 2000 sensitivity — environmental constraint.",
+   u:{n:"Built reservoir on adjacent granite ridge (APPROX)",lat:45.0830,lng:28.1970,elev:350,area:0.35,bear:10,dlen:580},
+   l:{n:"Existing flooded quarry lake (APPROX)",lat:45.0795,lng:28.2035,elev:160,area:0.28,dlen:0},
+   head:190,dist:1.0,slope:0.190,cap:0.7},
+  {id:"ro-dobrogea-mahmudia-bestepe",name:"Mahmudia — Bestepe",cls:"A",cty:"RO",bf:true,
+   config:"Lake Pair",formerUse:"Limestone quarry (open pit)",
+   closedYear:null,owner:"n/a (verify)",
+   confidence:"LOW — APPROXIMATE; included for completeness only",
+   scaleTiers:[{e:1.0,v:3000000},{e:2.0,v:6000000},{e:4,v:12000000}],
+   power_MW:120,duration_h:8.3,rte:0.80,
+   notes:"Close to the Danube Delta Biosphere Reserve — environmental approval likely a show-stopper. Lowest priority.",
+   u:{n:"Built reservoir on Bestepe hills (APPROX)",lat:45.0850,lng:29.0830,elev:180,area:0.60,bear:20,dlen:720},
+   l:{n:"Limestone pit (APPROX)",lat:45.0800,lng:29.0920,elev:30,area:0.50,dlen:0},
+   head:150,dist:1.8,slope:0.083,cap:1.0}
 ];
 
 /* ── Calculation helpers ──────────────────────────────────────────────── */
@@ -381,6 +424,13 @@ function lakeHTML(s,w,cap){
     html+="<tr><td>Type</td><td><em>Existing reservoir</em></td></tr>";
     if(s.anuWR)html+="<tr><td>ANU W/R (pair)</td><td>"+s.anuWR+"</td></tr>"+
       "<tr><td>ANU full design</td><td>"+s.anuGWh+" GWh / "+s.anuH+" h</td></tr>";
+  }else if(s.bf&&w==="l"){
+    /* brownfield lower reservoir — underground cavern or quarry pit, no dam */
+    var bfType=s.config==="Underground"?"Underground mine cavern":"Quarry / pit lake";
+    var bfDepth=s.config==="Underground"?Math.abs(r.elev)+" m below surface":r.elev+" m asl";
+    html+="<tr><td>Type</td><td><em>"+bfType+"</em></td></tr>"+
+      "<tr><td>Depth</td><td>"+bfDepth+"</td></tr>"+
+      "<tr><td>Former Use</td><td style='font-size:11px'>"+s.formerUse+"</td></tr>";
   }else{
     var h2=dh(v,a),rv2=rv(h2,r.dlen);
     html+="<tr><td>Dam Height</td><td>"+h2.toFixed(0)+" m</td></tr>"+
@@ -394,6 +444,7 @@ function lakeHTML(s,w,cap){
   return html;
 }
 function pipeHTML(s,capOvr){
+  if(s.bf)return bfPopupHTML(s,capOvr);
   var cap=capOvr||s.cap,m=metrics(s,cap);
   var mn=Math.max(0.5,parseFloat((s.cap*0.2).toFixed(1)));
   var mx=s.anuGWh||parseFloat((s.cap*4.0).toFixed(0));
@@ -429,6 +480,52 @@ function pipeHTML(s,capOvr){
       "<div class='or full'><span>Population served (100 % RE grid)</span><strong id='pp-"+s.id+"'>"+m.pop.toLocaleString()+"</strong></div>"+
     "</div>"+
     "<a class='anu-btn' href='"+anuUrl(s)+"' target='_blank' onclick='openANU(\""+s.id+"\");return false;'>&#127760; View in ANU PHES Atlas at this location</a>";
+}
+
+/* ── Brownfield / mine popup HTML ───────────────────────────────────── */
+function bfPopupHTML(s,capOvr){
+  var cap=capOvr||s.cap;
+  var tierMin=s.scaleTiers[0].e,tierMax=s.scaleTiers[s.scaleTiers.length-1].e;
+  var mn=parseFloat(Math.max(0.5,tierMin*0.4).toFixed(1));
+  var mx=tierMax;
+  /* confidence color: green if HIGH without LOW qualifier, red otherwise */
+  var confColor=s.confidence.indexOf("HIGH")!==-1&&s.confidence.indexOf("LOW")===-1?"#27ae60":"#e74c3c";
+  var tiersRows=s.scaleTiers.map(function(t){
+    var cur=Math.abs(t.e-cap)<0.01;
+    return"<tr><td style='"+(cur?"font-weight:700;color:#1a4a7a":"")+"'>"+t.e+" GWh</td>"+
+      "<td>"+(t.v/1e6).toFixed(2)+" Mm³</td></tr>";
+  }).join("");
+  return"<div class='ph'><span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span>"+
+    "<h3>"+s.name+"</h3>"+
+    "<span class='lt' style='background:#7f5af0;color:#fff;border:none;margin-left:4px'>&#9854; Brownfield</span></div>"+
+    "<table class='it'>"+
+    "<tr><td>Configuration</td><td>"+s.config+"</td></tr>"+
+    "<tr><td>Former Use</td><td style='font-size:11px'>"+s.formerUse+"</td></tr>"+
+    (s.closedYear?"<tr><td>Closed</td><td>"+s.closedYear+"</td></tr>":"")+
+    "<tr><td>Owner</td><td style='font-size:11px'>"+s.owner+"</td></tr>"+
+    "<tr><td>Head</td><td>"+s.head+" m</td></tr>"+
+    "<tr><td>Waterway</td><td>"+s.dist+" km</td></tr>"+
+    "<tr><td>Power</td><td>"+s.power_MW+" MW</td></tr>"+
+    "<tr><td>Duration</td><td>"+s.duration_h+" h</td></tr>"+
+    "<tr><td>Round-trip Eff.</td><td>"+(s.rte*100).toFixed(0)+" %</td></tr>"+
+    "</table>"+
+    "<div class='cs'>"+
+      "<div class='cl'><span>Energy Storage Capacity</span>"+
+      "<span class='cv' id='cv-"+s.id+"'>"+cap.toFixed(1)+" GWh</span></div>"+
+      "<input type='range' class='csl' id='cs-"+s.id+"' min='"+mn+"' max='"+mx+"' step='0.1' value='"+cap+"'"+
+      " oninput='upd(\""+s.id+"\",this.value)'>"+
+    "</div>"+
+    "<table class='ct'>"+
+      "<thead><tr><th>Scale Tier</th><th>Usable Volume</th></tr></thead>"+
+      "<tbody>"+tiersRows+"</tbody>"+
+    "</table>"+
+    "<div style='margin:6px 0;padding:5px 8px;background:#f8f4e8;border-radius:4px;border:1px solid #d4c5a9;font-size:11px'>"+
+      "<span style='font-weight:700;color:"+confColor+"'>&#128270; Confidence:</span> "+s.confidence+
+    "</div>"+
+    (s.notes?"<div style='font-size:11px;color:#4a6a8a;margin-top:5px;line-height:1.4;padding:0 2px'>"+
+      "<strong style='color:#1a4a7a'>Notes:</strong> "+s.notes+"</div>":"")+
+    "<a class='anu-btn' href='"+anuUrl(s)+"' target='_blank' onclick='openANU(\""+s.id+"\");return false;'>"+
+      "&#127760; View in ANU PHES Atlas at this location</a>";
 }
 
 /* ── Map ─────────────────────────────────────────────────────────────── */
@@ -514,8 +611,11 @@ function buildDetail(s,i,capOvr){
   var up=L.polygon(resPoly(s.u,s,cap,true),
     {color:col,fillColor:"#2980b9",fillOpacity:.55,weight:2.5,opacity:1});
   up.bindPopup(lakeHTML(s,"u",cap),{maxWidth:360});
+  var loUnderground=s.bf&&s.config==="Underground";
   var lo=L.polygon(resPoly(s.l,s,cap,false),
-    {color:col,fillColor:"#5dade2",fillOpacity:.40,weight:2.5,opacity:1});
+    {color:col,fillColor:loUnderground?"#1a1a2e":"#5dade2",
+     fillOpacity:loUnderground?0.28:0.40,weight:2.5,opacity:1,
+     dashArray:loUnderground?"5 3":undefined});
   lo.bindPopup(lakeHTML(s,"l",cap),{maxWidth:360});
   var pipe=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
     {color:col,weight:3,dashArray:"8 5",opacity:.95});
@@ -524,7 +624,7 @@ function buildDetail(s,i,capOvr){
     lyr.on("mouseover",function(){this.setStyle({fillOpacity:f1,weight:3});});
     lyr.on("mouseout", function(){this.setStyle({fillOpacity:f2,weight:2});});
   }
-  hov(up,.82,.55);hov(lo,.70,.40);
+  hov(up,.82,.55);hov(lo,.70,loUnderground?0.28:0.40);
   pipe.on("mouseover",function(){this.setStyle({weight:5,opacity:1});});
   pipe.on("mouseout", function(){this.setStyle({weight:3,opacity:.95});});
   grp.addLayer(up);grp.addLayer(lo);grp.addLayer(pipe);
@@ -542,7 +642,14 @@ window.collapse=function(){
   map.closePopup();
   /* restore dot appearance */
   var dot=dotCache[expanded];
-  if(dot){dot.setStyle({radius:dot._r,fillOpacity:.9,weight:2,color:"#fff",fillColor:clsCol(dot._site.cls)});}
+  if(dot){
+    if(dot._site&&dot._site.bf){
+      var el=dot.getElement();
+      if(el){var dv=el.querySelector("div");if(dv){dv.style.opacity=".92";dv.style.boxShadow="";}}
+    }else{
+      dot.setStyle({radius:dot._r,fillOpacity:.9,weight:2,color:"#fff",fillColor:clsCol(dot._site.cls)});
+    }
+  }
   var bgPl=pipeCache[expanded];
   if(bgPl)bgPl.setStyle({weight:2.5,opacity:0.72,dashArray:"7 5"});
   document.getElementById("infopanel").style.display="none";
@@ -559,7 +666,10 @@ function expand(s,i){
   /* zoom to the pair */
   /* Smart zoom: fixed-lake sites have huge existing polygons that would
      zoom the map OUT instead of in.  Use targeted flyTo instead.         */
-  if(s.l.fixed&&!s.u.fixed){
+  if(s.bf&&s.config==="Underground"){
+    /* Underground mine: fly to shaft location at a fixed zoom */
+    map.flyTo([s.u.lat,s.u.lng],14,{animate:true});
+  }else if(s.l.fixed&&!s.u.fixed){
     /* Bluefield: fitBounds on the full detail group (both polygons + pipe) */
     map.fitBounds(detailCache[s.id].getBounds().pad(0.4),{maxZoom:13,animate:true});
   }else if(s.u.fixed&&s.l.fixed){
@@ -567,12 +677,19 @@ function expand(s,i){
     map.fitBounds(L.latLngBounds([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]]).pad(0.3),
       {maxZoom:10,animate:true});
   }else{
-    /* Greenfield: fit the polygons + pipeline, zoom limit 14            */
+    /* Greenfield / brownfield lake pair: fit the polygons + pipeline    */
     map.fitBounds(detailCache[s.id].getBounds().pad(0.6),{maxZoom:14,animate:true});
   }
   /* highlight dot + thicken background pipeline */
   var dot=dotCache[s.id];
-  if(dot)dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:2.5,color:"#fff",fillColor:clsCol(s.cls)});
+  if(dot){
+    if(s.bf){
+      var el=dot.getElement();
+      if(el){var dv=el.querySelector("div");if(dv){dv.style.opacity="1";dv.style.boxShadow="0 0 0 4px rgba(255,255,255,.8)";}}
+    }else{
+      dot.setStyle({radius:dot._r+3,fillOpacity:1,weight:2.5,color:"#fff",fillColor:clsCol(s.cls)});
+    }
+  }
   var bgPl=pipeCache[s.id];
   if(bgPl)bgPl.setStyle({weight:5,opacity:1,dashArray:"8 4"});
   /* show info panel */
@@ -580,7 +697,8 @@ function expand(s,i){
   document.getElementById("ip-name").textContent=s.name;
   document.getElementById("ip-meta").innerHTML=
     "<span class='cb "+s.cls.toLowerCase()+"'>"+s.cls+"</span> &nbsp;"+
-    s.cap.toFixed(1)+" GWh &bull; "+s.head+" m head";
+    s.cap.toFixed(1)+" GWh &bull; "+s.head+" m head"+
+    (s.bf?" &bull; <span style='color:#7f5af0;font-weight:600'>Brownfield</span>":"");
   ip.style.display="block";
 }
 
@@ -609,20 +727,33 @@ function build(){
     var pl=L.polyline([[s.u.lat,s.u.lng],[s.l.lat,s.l.lng]],
       {color:col,weight:2.5,dashArray:"7 5",opacity:0.72});
     pl._site=s;pl._i=i;
-    pl.bindTooltip("<b>"+s.name+"</b> pipeline &bull; "+s.dist+" km &bull; "+s.head+" m head",
+    pl.bindTooltip("<b>"+s.name+"</b> "+(s.bf?s.config+" site":"pipeline")+" &bull; "+s.dist+" km &bull; "+s.head+" m head",
       {className:"hb-tip",sticky:true});
     pl.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
     pipeLayer.addLayer(pl);
     pipeCache[s.id]=pl;
 
-    /* ── Dot marker ── */
+    /* ── Dot / diamond marker ── */
     var r=Math.max(8,Math.min(18,7+Math.sqrt(s.cap)*1.6));
-    var dot=L.circleMarker([midLat,midLng],
-      {radius:r,color:"#fff",fillColor:col,fillOpacity:.9,weight:2,opacity:1});
+    var dot;
+    if(s.bf){
+      /* Diamond icon for brownfield sites */
+      var sz=Math.round(r*2.2);
+      dot=L.marker([midLat,midLng],{icon:L.divIcon({
+        className:"",
+        html:"<div style='width:"+sz+"px;height:"+sz+"px;background:"+col+
+          ";transform:rotate(45deg);border:2.5px solid rgba(255,255,255,.9);opacity:.92'></div>",
+        iconSize:[sz+6,sz+6],iconAnchor:[(sz+6)/2,(sz+6)/2]
+      })});
+    }else{
+      dot=L.circleMarker([midLat,midLng],
+        {radius:r,color:"#fff",fillColor:col,fillOpacity:.9,weight:2,opacity:1});
+    }
     dot._site=s;dot._r=r;
     dot.bindTooltip(
-      "<b>"+s.name+"</b><br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
-      "<br><small>&#128722; Click to view reservoirs &amp; pipeline</small>",
+      "<b>"+s.name+"</b>"+(s.bf?"<br><em style='color:#7f5af0'>&#9854; Brownfield &bull; "+s.config+"</em>":"")+
+      "<br>"+s.cap.toFixed(1)+" GWh &bull; Class "+s.cls+
+      "<br><small>&#128722; Click to view details</small>",
       {className:"hb-tip",direction:"top",offset:[0,-4]});
     dot.on("click",function(e){L.DomEvent.stopPropagation(e);expand(s,i);});
     dotLayer.addLayer(dot);
@@ -641,10 +772,21 @@ window.upd=function(id,val){
   var cap=parseFloat(val);
   var s=SITES.find(function(x){return x.id===id;});
   if(!s)return;
+  /* update capacity label (all site types) */
+  var cvEl=document.getElementById("cv-"+id);
+  if(cvEl)cvEl.textContent=cap.toFixed(1)+" GWh";
+  if(s.bf){
+    /* brownfield: resize upper polygon only, no metrics table to update */
+    if(expanded===id&&detailCache[id]){
+      var grp=detailCache[id];
+      if(!grp._uFixed)grp._upLayer.setLatLngs(resPoly(s.u,s,cap,true));
+      grp._cap=cap;
+    }
+    return;
+  }
   var m=metrics(s,cap);
   var lFixed=!!s.l.fixed,uFixed=!!s.u.fixed;
   /* update table cells */
-  document.getElementById("cv-"+id).textContent=cap.toFixed(1)+" GWh";
   document.getElementById("vu-"+id).textContent=m.v.toFixed(1);
   document.getElementById("vl-"+id).textContent=m.v.toFixed(1);
   if(!uFixed)document.getElementById("du-"+id).textContent=m.uh.toFixed(0);
@@ -692,8 +834,15 @@ leg.onAdd=function(){
     "<div class='li'><div class='ls' style='background:#2980b9aa;border:2px solid #1a5a8a'></div><span>Upper reservoir</span></div>"+
     "<div class='li'><div class='ls' style='background:#5dade288;border:2px solid #2a7ab0'></div><span>Lower reservoir</span></div>"+
     "<div class='li'><div class='lp' style='border-top-color:#aaa'></div><span>Penstock / tunnel</span></div>"+
+    "<h4 style='margin-top:9px'>SITE TYPE</h4>"+
+    "<div class='li'>"+
+      "<div style='width:13px;height:13px;border-radius:50%;background:#aaa;flex-shrink:0'></div>"+
+      "<span>Greenfield / Bluefield</span></div>"+
+    "<div class='li'>"+
+      "<div style='width:11px;height:11px;background:#aaa;transform:rotate(45deg);flex-shrink:0;margin:2px'></div>"+
+      "<span>Brownfield (mine / quarry)</span></div>"+
     "<div style='margin-top:8px;font-size:10px;color:#6c9ab5;border-top:1px solid #1a3a5c;padding-top:6px'>"+
-    "Dot size &prop; storage capacity<br>Click dot &rarr; expand pair<br>Click map &rarr; collapse</div>";
+    "Dot size &prop; storage capacity<br>Click marker &rarr; expand<br>Click map &rarr; collapse</div>";
   return d;
 };
 leg.addTo(map);

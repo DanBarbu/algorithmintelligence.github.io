@@ -1,6 +1,6 @@
 ---
 name: art-catalog-assembler
-description: "Use this skill when assembling an art/artefact catalog from two source files: a Word document (.docx) containing the catalog text with image insertion points marked by a caption like 'Figure Placeholder: <description>', and a PDF containing the actual artefact/artwork images (typically one image per page) to be dropped into those insertion points. Triggers include: 'insert these images into the catalog', 'match the PDF images to the placeholders', 'assemble the catalog', or any request to merge a manuscript with figure placeholders and a PDF of photographs into a finished, print-ready document. Do NOT use for generic docx editing unrelated to image placeholders, or for PDFs that aren't a source of images to insert."
+description: "Use this skill when assembling an art/artefact catalog from two source files: a Word document (.docx) containing the catalog text with image insertion points marked by a caption like 'Figure Placeholder: <description>', and a PDF containing the actual artefact/artwork images to be dropped into those insertion points (either a plain photo-per-page PDF, or a slide-deck export with per-item caption text and source hyperlinks). Triggers include: 'insert these images into the catalog', 'match the PDF images to the placeholders', 'assemble the catalog', 'add the source/hyperlink under each image', or any request to merge a manuscript with figure placeholders and a PDF of photographs into a finished, print-ready document. Do NOT use for generic docx editing unrelated to image placeholders, or for PDFs that aren't a source of images to insert."
 license: Proprietary. LICENSE.txt has complete terms
 ---
 
@@ -25,10 +25,27 @@ leave that alone, it's real content, not a marker.
 If your document uses a different marker phrase, pass `--marker "..."` to
 every script below (must match exactly, including trailing colon).
 
-## Pipeline
+## Two source-PDF shapes, two matching strategies
 
-Run from this skill's `scripts/` directory (or reference full paths). Work
-in a scratch directory — nothing here needs to touch the repo.
+**Plain photo scan** (one photo per page, no text layer): use
+`extract_pdf_images.py` + `build_mapping.py`, which default to strict
+positional pairing (placeholder #N ↔ image #N). This only works if the PDF
+happens to be in manuscript order — often it isn't (a curator's working
+photo dump rarely matches chapter order), so treat the output as a
+starting guess, not an answer.
+
+**Slide-deck export** (one slide per artefact, with a caption / title /
+region label, and sometimes a source hyperlink — e.g. exported from
+PowerPoint/Keynote research slides): use `extract_pdf_slides.py` +
+`match_by_text.py` instead. This matches by comparing each placeholder's
+description text against each slide's caption text, independent of page
+order — dramatically higher confidence than position when the deck isn't
+already in manuscript order, and it carries any hyperlink through to the
+final CSV so it can be inserted as a source citation.
+
+If you have **both** kinds of PDF for the same catalog, prefer the
+slide-deck one — its image and caption are guaranteed paired 1:1 on the
+same page, which the plain photo scan can't offer.
 
 ```bash
 pip install -r ../requirements.txt   # python-docx, pymupdf — install once
@@ -36,45 +53,59 @@ pip install -r ../requirements.txt   # python-docx, pymupdf — install once
 # 1. List every insertion point in the manuscript, in reading order
 python extract_placeholders.py catalog.docx placeholders.json
 
-# 2. Extract one image per PDF page (largest embedded raster, or a full-page
-#    render if the page has no embedded raster), in page order
+# 2a. Plain photo-per-page PDF:
 python extract_pdf_images.py images.pdf extracted_images/ pdf_manifest.json
-
-# 3. Propose a mapping: Nth placeholder <-> Nth image, by document/page order,
-#    with a fuzzy-match confidence score against any text found on each PDF page
 python build_mapping.py placeholders.json pdf_manifest.json mapping.csv
 
-# 4. REVIEW mapping.csv before proceeding (see below) — then assemble
+# 2b. OR a slide-deck PDF with per-item captions/hyperlinks:
+python extract_pdf_slides.py deck.pdf slides/ slides_manifest.json
+python match_by_text.py placeholders.json slides_manifest.json mapping.csv
+
+# 3. REVIEW mapping.csv before proceeding (see below) — then assemble
 python assemble_catalog.py catalog.docx placeholders.json mapping.csv \
-    extracted_images/ assembled_catalog.docx
+    extracted_images/ assembled_catalog.docx   # or slides/ for the 2b path
 ```
 
 ## Always review `mapping.csv` before assembling
 
-The default mapping is **strict positional pairing**: placeholder #N gets
-image #N, assuming the PDF's page order matches the manuscript's insertion
-order. This is usually correct for these workflows, but is a *guess* — it
-is not verified against image content. Before running step 4:
+Whichever matcher you used, its output is a *proposal*, not verified
+ground truth. Before running the assemble step:
 
 1. Open `mapping.csv`. Check the `flag` column:
-   - `UNMATCHED_PLACEHOLDER` / `UNUSED_IMAGE` — placeholder count and PDF
-     page count didn't match. Resolve this first (a page is missing/extra
-     in the PDF, or a placeholder in the manuscript has no photo yet) —
-     don't just let positional pairing silently drift out of alignment
-     past the mismatch point.
-   - `LOW_CONFIDENCE` — the PDF page's text didn't resemble the placeholder
-     description. Often harmless (the PDF page has no printed caption at
-     all), but worth a manual look.
-2. Spot-check a handful of `extracted_images/img_NNNN.*` files against
-   their paired `description` — open a few images and read the text.
-3. Hand-edit the `image_file` column for any row that's wrong (values must
-   be filenames that exist in `extracted_images/`), or blank it out to
-   leave that placeholder unfilled rather than wrong.
+   - `UNMATCHED_PLACEHOLDER` / `UNUSED_IMAGE` / `UNUSED_SLIDE` — counts
+     didn't match on one side. Resolve this first — don't let pairing
+     silently drift out of alignment past the mismatch point.
+   - `LOW_CONFIDENCE` (from `build_mapping.py`) / `REVIEW_LOW_SCORE` (from
+     `match_by_text.py`) — worth a manual look, but **not automatically
+     wrong**. A low text-similarity score is also what a *genuine* match
+     looks like when the slide caption has a lot of extra prose (gift/
+     provenance details) diluting the ratio, or when both strings are very
+     short. Read the actual text/image before discarding a flagged row.
+   - Rows can also be **wrong despite a decent score**: `match_by_text.py`
+     assigns greedily (highest-scoring pairs first), so a placeholder can
+     have its true match "stolen" by another placeholder that scored
+     slightly higher against the same slide, and gets shunted onto a bad
+     leftover instead. This tends to cluster a few genuinely-wrong rows
+     next to genuinely-right-but-low-scoring ones — same-looking numbers,
+     different cause. Spot check, don't just threshold on the score.
+   - `multi_image_page` = True means that PDF page had more than one
+     embedded image (a wide exhibition shot with several sub-photos, or
+     two related items captioned on one slide). Only the first image was
+     auto-picked; check `slides_manifest.json`'s `images` list for that
+     page and fix the `image_file` column by hand if a different one (or
+     more than one placeholder reusing the same one) is correct.
+2. Spot-check a handful of extracted image files against their paired
+   `description` — open a few and read them.
+3. Hand-edit the `image_file` column for any row that's wrong, or blank it
+   out to leave that placeholder unfilled rather than wrong. The same
+   image file can legitimately be reused across multiple rows (e.g. one
+   photo showing two objects that the manuscript describes as separate
+   placeholders).
 
 This matters more than usual for cultural-heritage / provenance catalogs:
-a positionally-plausible but wrong pairing (e.g. one artist's work
-captioned under another's) is a real attribution error, not just a cosmetic
-one.
+a plausible-looking but wrong pairing (e.g. one artist's work captioned
+under another's, or a Fijian object mislabeled as Solomon Islands) is a
+real attribution error, not just a cosmetic one.
 
 ## What assembly does and doesn't touch
 
@@ -85,6 +116,14 @@ one.
   leaving the description as a clean caption — all other text, styles,
   headings, and page setup in the manuscript are left completely alone
   (this is an in-place XML edit, not a document rebuild).
+- If a row has a non-empty `hyperlink` column, inserts a new paragraph
+  right after the caption with a clickable "Source: <url>" link (real
+  `w:hyperlink` + external relationship, not just plain text) — useful for
+  carrying provenance/auction-listing links from a slide deck into the
+  final catalog. This step runs as a second pass in descending paragraph-
+  index order (it changes paragraph *count*, unlike the image/caption
+  edits, so order matters — see the comment in `insert_source_line()` if
+  modifying this).
 - Rows without a mapped image are left as the original grey placeholder box
   so unresolved gaps stay visible rather than silently vanishing.
 

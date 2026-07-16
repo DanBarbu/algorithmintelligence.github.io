@@ -1,0 +1,11 @@
+{
+  "//": "Merge the 'blender' entry into your client's mcpServers block. Do not overwrite other servers you already have.",
+  "//python": "--python 3.11 + only-managed avoids conda/pyenv/asdf conflicts. Verified: uvx --python 3.11 blender-mcp installs and imports cleanly.",
+  "mcpServers": {
+    "blender": {
+      "command": "uvx",
+      "args": ["--python", "3.11", "blender-mcp"],
+      "env": { "UV_PYTHON_PREFERENCE": "only-managed" }
+    }
+  }
+}

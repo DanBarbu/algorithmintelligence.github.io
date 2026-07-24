@@ -42,23 +42,61 @@ minimal photo sets, you don't get the AI inpainting that hides sparse coverage.
   accuracy and scriptability.
 - **CLI:** fully scriptable — see `scripts/run_colmap.sh`.
 
-## 3. Mobile apps — stay on the phone
+## 3. More free desktop tools (when Meshroom/COLMAP don't fit)
 
-Good for a first scan or when the object is small and portable. Not
-open-source, but free-tier and no local compute needed.
+Open-source photogrammetry is a whole ecosystem — if the two above are too
+heavy, too CUDA-dependent, or too bare-bones, these are proven free options:
 
-- **RealityScan** (by Epic Games, iOS/Android): completely free, no watermark.
-  Walk around the object, it processes in the cloud, export the model to
-  Sketchfab or to your computer. The most polished free rival to Kiri right
-  now.
-- **Polycam** (iOS/Android): has a paid Pro tier, but the free tier is
-  generous and often beats Kiri on small objects.
+- **Regard3D** — https://www.regard3d.org (open-source, Win/macOS/Linux). A
+  lightweight, fully-GUI SfM tool that needs **no GPU** — it runs on the CPU,
+  so it's a gentle middle ground between Meshroom's CUDA requirement and
+  COLMAP's steep UI. Best for smaller datasets on modest hardware.
+- **3DF Zephyr Free** — https://www.3dflow.net/3df-zephyr-free/ (closed-source
+  but genuinely free, Windows). Polished, friendly UI and often better
+  out-of-the-box quality than the open-source tools. **Caps: 50 photos per
+  project and a single GPU.** Great for small objects; the photo cap rules out
+  large captures. Works with NVIDIA/AMD/Intel GPUs.
+- **OpenDroneMap (ODM/WebODM)** — https://github.com/OpenDroneMap/ODM
+  (open-source). The go-to for **aerial/drone and large-area** captures rather
+  than tabletop objects; runs as a local web app.
+- **OpenMVG** + **OpenMVS**, and **MicMac** (IGN) — open-source, advanced,
+  scriptable toolchains. Powerful but command-line-heavy; reach for these only
+  if COLMAP isn't giving you the control you need.
+
+## 4. Mobile apps — stay on the phone (free tiers, know the catch)
+
+Convenient for a first scan or a small portable object; processing happens in
+the vendor's cloud, so no local compute. These are **not** open-source, and
+their free tiers each have a real catch — check reviews before committing a
+whole project to one.
+
+- **KIRI Engine** (iOS/Android/web): despite being the paid app this workflow
+  set out to replace, its **free tier is now unusually generous** — advertised
+  unlimited scans and unlimited exports, no ads or output paywall. If you were
+  avoiding it purely on cost, the free tier may already be enough. Cloud
+  quotas/queue times can still apply at busy times.
+- **Polycam** (iOS/Android/web): free plan is usable indefinitely but **caps
+  each model at ~150 images, exports only `.gltf`, and share links are
+  public-only.** Often beats other apps on small objects. Upgrade unlocks other
+  formats (OBJ/FBX/STL).
+- **RealityScan** (Epic Games, iOS/Android): free, no watermark — but **vet it
+  first.** App-store rating sits around **2.66/5**, with recurring complaints
+  of an **Epic-account login loop** (app bounces back to the sign-in screen),
+  **cropping that forces the ground into the scan**, and **weaker results than
+  rivals on the same photos** — exactly the "MVP without the workload" feel.
+  Epic is actively patching it, so it's improving, but treat it as a
+  try-before-you-rely option, not a default.
 
 ## Choosing quickly
 
-- NVIDIA PC → **Meshroom**.
-- Mac / AMD / Intel-only → **COLMAP**.
-- Phone-only or want the fastest first result → **RealityScan**.
+- NVIDIA PC, want one-click → **Meshroom**.
+- Mac / AMD / Intel-only, or maximum accuracy → **COLMAP**.
+- Modest CPU-only machine, want a simple GUI → **Regard3D**.
+- Windows, want polish and ≤50 photos → **3DF Zephyr Free**.
+- Drone / large aerial area → **OpenDroneMap / WebODM**.
+- Phone-only, want a generous free cloud tier → **KIRI Engine free tier**;
+  **Polycam** for small objects (mind the `.gltf`-only export).
+- Avoid depending on **RealityScan** until you've confirmed it works for you.
 
 ## After reconstruction
 

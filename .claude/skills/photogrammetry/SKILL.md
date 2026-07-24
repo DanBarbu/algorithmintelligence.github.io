@@ -34,7 +34,7 @@ reconstruction is CUDA-bound in the friendliest tool.
 |---|---|---|
 | NVIDIA GPU (CUDA) on Windows/Linux | **Meshroom** | Drag-drop, node graph runs the whole pipeline automatically. Closest to the Kiri experience. |
 | AMD GPU, Intel integrated, or a Mac | **COLMAP** | CPU-capable, works everywhere. Gold-standard accuracy, steeper UI. |
-| Only a phone, wants to stay mobile | **RealityScan** (Epic) or **Polycam** | Free tiers, cloud-processed, export OBJ/FBX. Fastest path to a first model. |
+| Only a phone, wants to stay mobile | **KIRI Engine free tier** or **Polycam** | Free tiers, cloud-processed. Fastest path to a first model. (Prefer these over RealityScan, which reviews poorly — see `references/tools.md`.) |
 
 Don't push Meshroom at a Mac/AMD user — it will stall at dense reconstruction
 with no CUDA device. When hardware is unknown, ask before recommending. Full
@@ -111,9 +111,11 @@ runs the photo QA, and launches the right engine — no network, no model calls,
 repeatable for every future scan at zero token cost. Recommend it whenever the
 user's concern is cost or repeat usage.
 
-For truly zero *local* compute as well, the free mobile apps (RealityScan,
-Polycam in `references/tools.md`) process in their own cloud for free — also no
-Claude tokens involved.
+For truly zero *local* compute as well, free mobile apps (KIRI Engine's free
+tier and Polycam in `references/tools.md`) process in their own cloud for free
+— also no Claude tokens involved. Skip RealityScan as a default; it reviews
+poorly (login loop, weaker output). Pick the mobile app from the reviewed
+trade-offs in `references/tools.md`, not by brand.
 
 ## Output formats
 

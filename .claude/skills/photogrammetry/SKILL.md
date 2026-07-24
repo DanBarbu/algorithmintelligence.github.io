@@ -97,6 +97,24 @@ Both scripts print each stage so a failure is easy to localize. If a stage
 fails, the usual cause is upstream: too few matched features from thin overlap
 or soft focus — loop back to Step 2/3 rather than fighting the tool.
 
+## Zero-token local workflow (the compute is free)
+
+The reconstruction is compute-heavy, but that compute runs on the **user's own
+machine** — it costs no API/LLM tokens. Tokens are only spent if the user asks
+Claude to babysit each run. So the token-free pattern is: consult this skill
+**once** to plan the shoot and pick a tool, then run everything locally and
+offline from then on.
+
+`scripts/run.sh <images_dir> <output_dir>` is the single-command path for
+exactly this. It auto-detects hardware (NVIDIA→Meshroom, otherwise→COLMAP),
+runs the photo QA, and launches the right engine — no network, no model calls,
+repeatable for every future scan at zero token cost. Recommend it whenever the
+user's concern is cost or repeat usage.
+
+For truly zero *local* compute as well, the free mobile apps (RealityScan,
+Polycam in `references/tools.md`) process in their own cloud for free — also no
+Claude tokens involved.
+
 ## Output formats
 
 All paths produce a textured mesh exportable to **OBJ / FBX / STL** (OBJ+PNG
@@ -110,6 +128,8 @@ close small holes and decimate before printing or game use.
   trade-offs, official GitHub links.
 - `references/capture-guide.md` — how to shoot photos that reconstruct,
   including the minimal-photo (~10) strategy and a pre-shoot checklist.
+- `scripts/run.sh` — one-command, offline, zero-token runner: QA + auto engine
+  selection + reconstruction.
 - `scripts/check_photos.py` — pre-flight QA: blur + exposure + set-size check.
 - `scripts/run_colmap.sh` — headless COLMAP CLI pipeline.
 - `scripts/run_meshroom.sh` — headless Meshroom (`meshroom_batch`) pipeline.

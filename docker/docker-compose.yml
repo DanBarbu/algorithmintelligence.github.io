@@ -1,0 +1,110 @@
+version: "3.9"
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  metoc-network:
+    driver: bridge
+    internal: false   # allows API → external (for live mode); shut off in air-gap
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  geoserver_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # ── METOC API (FastAPI + pipeline orchestrator) ──────────────────────────────
+  metoc-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: api
+      args:
+        AIR_GAP_BUILD: "${AIR_GAP_BUILD:-false}"
+    image: metoc-lagrangian-api:latest
+    container_name: metoc-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"          # only API port exposed externally
+    volumes:
+      - type: bind
+        source: ../data/input
+        target: /app/data/input
+        read_only: true
+      - type: bind
+        source: ../data/output
+        target: /app/data/output
+    environment:
+      AIR_GAP_MODE: "${AIR_GAP_MODE:-false}"
+      SEED: "${SEED:-42}"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      CMEMS_USERNAME: "${CMEMS_USERNAME:-}"
+      CMEMS_PASSWORD: "${CMEMS_PASSWORD:-}"
+      AIFS_BASE_URL: "${AIFS_BASE_URL:-https://data.ecmwf.int/forecasts}"
+      MARKET_ID: "${MARKET_ID:-EPEX_DE}"
+      MONTE_CARLO_PARTICLES: "${MONTE_CARLO_PARTICLES:-100}"
+      FORECAST_HOURS: "${FORECAST_HOURS:-24}"
+    env_file:
+      - path: ../.env
+        required: false
+    networks:
+      - metoc-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── GeoServer (OGC WMS/WFS for tactical map layers) ─────────────────────────
+  geoserver:
+    image: kartoza/geoserver:2.25.0
+    container_name: metoc-geoserver
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - geoserver_data:/opt/geoserver/data_dir
+      - type: bind
+        source: ../data/output
+        target: /app/data/output
+        read_only: true
+    environment:
+      GEOSERVER_DATA_DIR: /opt/geoserver/data_dir
+      GEOSERVER_ADMIN_PASSWORD: "${GEOSERVER_ADMIN_PASSWORD:-geoserver}"
+      GEOSERVER_ADMIN_USER: "${GEOSERVER_ADMIN_USER:-admin}"
+      INITIAL_MEMORY: "${GEOSERVER_INIT_MEM:-512M}"
+      MAXIMUM_MEMORY: "${GEOSERVER_MAX_MEM:-2G}"
+      STABLE_EXTENSIONS: "ysld,feature-pregeneralized"
+    networks:
+      - metoc-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/geoserver/web/ || exit 1"]
+      interval: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 90s
+
+  # ── Redis (optional: Celery task queue for async pipeline runs) ──────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: metoc-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - metoc-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    # Redis is NOT exposed externally — only accessible within metoc-network

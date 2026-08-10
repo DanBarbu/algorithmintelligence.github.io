@@ -1,0 +1,96 @@
+name: WILL Platform CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**", "sprint/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  # ── S0-08: Security scanning — GPS sim image ─────────────────────────────
+  scan-gps-sim:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build gps-sim image
+        run: docker build -t will-gps-sim:ci ./plugins/gps-sim
+      - name: Trivy scan (gps-sim)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: will-gps-sim:ci
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+      - name: Grype scan (gps-sim)
+        uses: anchore/scan-action@v3
+        with:
+          image: will-gps-sim:ci
+          fail-build: true
+          severity-cutoff: high
+
+  # ── S0-08: Security scanning — ws-bridge image ──────────────────────────
+  scan-ws-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build ws-bridge image
+        run: docker build -t will-ws-bridge:ci ./core/ws-bridge
+      - name: Trivy scan (ws-bridge)
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: will-ws-bridge:ci
+          format: table
+          exit-code: "1"
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+  # ── Go lint ───────────────────────────────────────────────────────────────
+  lint-go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          working-directory: core/ws-bridge
+
+  # ── Python lint ───────────────────────────────────────────────────────────
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: pip install ruff mypy paho-mqtt
+      - name: ruff check
+        run: ruff check plugins/gps-sim/plugin.py
+      - name: mypy (strict)
+        run: mypy --strict plugins/gps-sim/plugin.py
+
+  # ── Frontend lint ─────────────────────────────────────────────────────────
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install deps
+        run: npm ci
+        working-directory: frontend
+      - name: ESLint
+        run: npm run lint
+        working-directory: frontend
+      - name: TypeScript check
+        run: npx tsc --noEmit
+        working-directory: frontend

@@ -1,0 +1,9 @@
+# Algorithm Intelligence
+
+> Algorithm Intelligence helps universities, startups, and industry form and run high-impact AI research consortiums — with robust IP frameworks, governance, funding strategy, and transparent program delivery.
+
+## Pages
+
+- [Algorithm Intelligence — AI Research Consortiums](https://algorithmintelligence.github.io/): We help universities, startups, and industry form and run high-impact AI research consortiums with robust IP frameworks, governance, and transparent delivery.
+- [Malaysia Hydrobattery Atlas — ANU PHES](https://algorithmintelligence.github.io/hydrobattery.html): Malaysia Hydrobattery Atlas — ANU PHES
+
